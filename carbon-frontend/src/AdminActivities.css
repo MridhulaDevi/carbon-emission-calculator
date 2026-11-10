@@ -1,0 +1,306 @@
+.admin-activities-page {
+  min-height: 100vh;
+  padding: 35px;
+  background: #f6f8f7;
+  color: #1f2933;
+}
+
+.loading-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+
+.activity-spinner {
+  width: 35px;
+  height: 35px;
+  border: 4px solid #dce9e2;
+  border-top-color: #2e7d5b;
+  border-radius: 50%;
+  animation: activitySpin 0.8s linear infinite;
+  margin-bottom: 15px;
+}
+
+@keyframes activitySpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.activities-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 25px;
+}
+
+.admin-label {
+  margin: 0 0 7px;
+  color: #2e7d5b;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+}
+
+.activities-header h1 {
+  margin: 0;
+  font-size: 30px;
+}
+
+.activities-header p:last-child {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.activity-refresh {
+  height: 40px;
+  border: none;
+  border-radius: 8px;
+  padding: 0 18px;
+  background: #2e7d5b;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.activity-success,
+.activity-error {
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 18px;
+}
+
+.activity-success {
+  background: #eaf7ef;
+  color: #26734d;
+}
+
+.activity-error {
+  background: #fff0f0;
+  color: #b42318;
+}
+
+.activity-table-card {
+  background: white;
+  border: 1px solid #e5e9e7;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.activity-table-heading {
+  padding: 20px 24px;
+  border-bottom: 1px solid #edf0ee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.activity-table-heading h2 {
+  margin: 0;
+  font-size: 19px;
+}
+
+.activity-table-heading span {
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.activity-table-wrapper {
+  overflow-x: auto;
+}
+
+.activity-table {
+  width: 100%;
+  min-width: 1050px;
+  border-collapse: collapse;
+}
+
+.activity-table th {
+  background: #f8faf9;
+  padding: 14px 16px;
+  text-align: left;
+  font-size: 12px;
+  color: #66736c;
+}
+
+.activity-table td {
+  padding: 15px 16px;
+  border-top: 1px solid #edf0ee;
+  font-size: 13px;
+}
+
+.category-badge {
+  background: #e8f4ee;
+  color: #2e7d5b;
+  padding: 5px 9px;
+  border-radius: 15px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.emission-value {
+  font-weight: 700;
+  color: #2e7d5b;
+}
+
+.activity-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.activity-edit,
+.activity-delete {
+  border: none;
+  border-radius: 6px;
+  padding: 7px 10px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.activity-edit {
+  background: #edf4ff;
+  color: #3267a8;
+}
+
+.activity-delete {
+  background: #fff0f0;
+  color: #c43d3d;
+}
+
+.no-activities {
+  text-align: center;
+  padding: 60px;
+}
+
+.no-activities div {
+  font-size: 45px;
+}
+
+.no-activities h3 {
+  margin-bottom: 5px;
+}
+
+.no-activities p {
+  color: #6b7280;
+}
+
+/* MODAL */
+
+.activity-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 30, 25, 0.55);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  z-index: 1000;
+}
+
+.activity-modal {
+  width: 100%;
+  max-width: 650px;
+  background: white;
+  border-radius: 15px;
+  overflow: hidden;
+}
+
+.activity-modal-header {
+  padding: 22px 25px;
+  border-bottom: 1px solid #edf0ee;
+  display: flex;
+  justify-content: space-between;
+}
+
+.activity-modal-header p {
+  margin: 0 0 5px;
+  color: #2e7d5b;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.activity-modal-header h2 {
+  margin: 0;
+}
+
+.activity-close {
+  border: none;
+  background: transparent;
+  font-size: 28px;
+  cursor: pointer;
+}
+
+.activity-modal form {
+  padding: 25px;
+}
+
+.activity-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.activity-form-grid div {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.activity-form-grid label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.activity-form-grid input {
+  padding: 10px 12px;
+  border: 1px solid #d8dfdb;
+  border-radius: 7px;
+  outline: none;
+}
+
+.activity-form-grid input:focus {
+  border-color: #2e7d5b;
+}
+
+.activity-modal-actions {
+  margin-top: 25px;
+  padding-top: 20px;
+  border-top: 1px solid #edf0ee;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.activity-cancel,
+.activity-save {
+  border: none;
+  padding: 10px 18px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.activity-cancel {
+  background: #eef1ef;
+}
+
+.activity-save {
+  background: #2e7d5b;
+  color: white;
+}
+
+@media (max-width: 700px) {
+  .admin-activities-page {
+    padding: 20px;
+  }
+
+  .activities-header {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .activity-form-grid {
+    grid-template-columns: 1fr;
+  }
+}

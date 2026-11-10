@@ -1,0 +1,136 @@
+
+.profile-page {
+  min-height: 100vh;
+  background: #f4f5f0;
+  padding: 35px 6%;
+  color: #101d2b;
+}
+
+.profile-header {
+  margin-bottom: 25px;
+}
+
+.profile-tag {
+  color: #1f9d8b;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+.profile-header h1 {
+  font-size: 34px;
+  margin: 8px 0;
+}
+
+.profile-header p {
+  color: #718078;
+}
+
+.back-btn {
+  border: none;
+  background: transparent;
+  color: #1f9d8b;
+  font-weight: 700;
+  cursor: pointer;
+  margin-bottom: 20px;
+  font-size: 15px;
+}
+
+.profile-card {
+  background: white;
+  border-radius: 16px;
+  padding: 28px;
+  margin-bottom: 24px;
+  box-shadow: 0 5px 22px rgba(16, 29, 43, 0.06);
+}
+
+.profile-card h2 {
+  font-size: 20px;
+  margin: 0 0 22px;
+}
+
+.profile-card h2:not(:first-child) {
+  margin-top: 30px;
+}
+
+.profile-card p {
+  color: #718078;
+  margin-top: -12px;
+  margin-bottom: 20px;
+}
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.profile-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #35443e;
+}
+
+.profile-grid input,
+.profile-grid select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 13px;
+  border: 1px solid #dce3df;
+  border-radius: 9px;
+  outline: none;
+  background: #fbfcfa;
+  color: #101d2b;
+  font-size: 14px;
+}
+
+.profile-grid input:focus,
+.profile-grid select:focus {
+  border-color: #1f9d8b;
+}
+
+.profile-grid input:disabled {
+  background: #edf0ed;
+  color: #7d8882;
+  cursor: not-allowed;
+}
+
+.save-btn {
+  margin-top: 25px;
+  padding: 13px 25px;
+  border: none;
+  border-radius: 9px;
+  background: #1f9d8b;
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.save-btn:hover {
+  background: #167b6d;
+}
+
+.profile-message {
+  background: #e2f4ed;
+  color: #17664e;
+  padding: 13px 18px;
+  border-radius: 9px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 650px) {
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-page {
+    padding: 25px 5%;
+  }
+
+  .profile-card {
+    padding: 20px;
+  }
+}

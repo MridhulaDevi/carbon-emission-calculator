@@ -1,0 +1,170 @@
+
+.goals-page {
+  min-height: 100vh;
+  padding: 40px 6%;
+  background: #f4f5f0;
+  color: #101d2b;
+}
+
+.goals-header span {
+  color: #1f9d8b;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+.goals-header h1 {
+  font-size: 34px;
+  margin: 10px 0;
+}
+
+.goals-header p {
+  color: #718078;
+}
+
+.goal-form {
+  background: white;
+  padding: 28px;
+  border-radius: 16px;
+  margin: 30px 0;
+  box-shadow: 0 5px 22px rgba(16, 29, 43, 0.05);
+}
+
+.goal-form h2 {
+  margin-top: 0;
+  margin-bottom: 22px;
+}
+
+.goal-form label {
+  display: block;
+  margin-bottom: 17px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.goal-form input,
+.goal-form select {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 8px;
+  padding: 13px;
+  border: 1px solid #dce3df;
+  border-radius: 9px;
+  background: #fbfcfa;
+  font-size: 14px;
+}
+
+.goal-form input:focus,
+.goal-form select:focus {
+  outline: none;
+  border-color: #1f9d8b;
+}
+
+.goal-form button {
+  padding: 13px 22px;
+  background: #1f9d8b;
+  color: white;
+  border: none;
+  border-radius: 9px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.goal-form button:hover {
+  background: #167b6d;
+}
+
+.goals-list-title {
+  margin: 35px 0 20px;
+}
+
+.goals-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.goal-card,
+.goal-empty {
+  background: white;
+  padding: 25px;
+  border-radius: 15px;
+  border: 1px solid #e8ede9;
+}
+
+.goal-card-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.goal-card-heading h3 {
+  margin: 0;
+}
+
+.goal-card-heading span {
+  color: #1f9d8b;
+  font-weight: 800;
+}
+
+.goal-progress-track {
+  height: 9px;
+  background: #e8eee9;
+  border-radius: 20px;
+  margin: 20px 0 12px;
+  overflow: hidden;
+}
+
+.goal-progress-fill {
+  height: 100%;
+  background: #1f9d8b;
+  border-radius: 20px;
+}
+
+.goal-card p {
+  color: #718078;
+  font-size: 14px;
+}
+
+.goal-status {
+  display: inline-block;
+  padding: 6px 12px;
+  background: #e2f4ed;
+  color: #17664e;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.goal-empty {
+  text-align: center;
+  grid-column: 1 / -1;
+  padding: 45px;
+}
+
+.goal-empty span {
+  font-size: 40px;
+}
+
+.goal-empty p {
+  color: #718078;
+}
+
+.goals-message {
+  padding: 13px;
+  background: #e2f4ed;
+  color: #17664e;
+  border-radius: 9px;
+  margin: 15px 0;
+}
+
+@media (max-width: 650px) {
+  .goals-list {
+    grid-template-columns: 1fr;
+  }
+
+  .goals-page {
+    padding: 25px 5%;
+  }
+}
