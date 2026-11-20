@@ -1,39 +1,74 @@
-import React, { useEffect, useState } from "react";
+
+import React, { useEffect, useMemo, useState } from "react";
 import "./AdminActivities.css";
 
 const API_URL = "http://localhost:8080";
 
 function AdminActivities() {
   const [activities, setActivities] = useState([]);
+  const [users, setUsers] = useState([]);
   const [editing, setEditing] = useState(null);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  const token = localStorage.getItem("token");
+  // NEW FILTER STATES
+  const [selectedUser, setSelectedUser] = useState("all");
+  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedMonth, setSelectedMonth] = useState("all");
+  const [selectedYear, setSelectedYear] = useState("all");
 
-  const headers = {
+  const getHeaders = () => ({
     "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
+    Authorization: `Bearer ${localStorage.getItem("token")}`,
+  });
+
+  const request = async (path, options = {}) => {
+    const response = await fetch(`${API_URL}${path}`, {
+      ...options,
+      headers: getHeaders(),
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(text || `Server error (${response.status})`);
+    }
+
+    const text = await response.text();
+
+    if (!text) return null;
+
+    try {
+      return JSON.parse(text);
+    } catch {
+      return text;
+    }
   };
 
   const loadActivities = async () => {
-    try {
-      setLoading(true);
+    setLoading(true);
+    setError("");
 
-      const response = await fetch(
-        `${API_URL}/api/admin/activities`,
-        { headers }
+    try {
+      const activityData = await request("/api/admin/activities");
+
+      setActivities(
+        Array.isArray(activityData) ? activityData : []
       );
 
-      if (!response.ok) {
-        throw new Error();
+      try {
+        const userData = await request("/api/admin/users");
+
+        setUsers(
+          Array.isArray(userData) ? userData : []
+        );
+      } catch (userError) {
+        console.error("Unable to load user names:", userError);
+        setUsers([]);
       }
-
-      setActivities(await response.json());
-      setError("");
-
-    } catch {
+    } catch (err) {
+      console.error(err);
       setError("Unable to load activities.");
     } finally {
       setLoading(false);
@@ -44,26 +79,144 @@ function AdminActivities() {
     loadActivities();
   }, []);
 
+  const getUserName = (activity) => {
+    if (activity.userName) {
+      return activity.userName;
+    }
+
+    if (activity.user?.name) {
+      return activity.user.name;
+    }
+
+    const userId =
+      activity.userId ?? activity.user?.id;
+
+    if (userId != null) {
+      const matchedUser = users.find(
+        (user) => String(user.id) === String(userId)
+      );
+
+      if (matchedUser) {
+        return matchedUser.name || matchedUser.email;
+      }
+
+      return `User #${userId}`;
+    }
+
+    return "Unknown User";
+  };
+
+  // USER OPTIONS FROM ACTUAL ACTIVITIES
+  const userOptions = useMemo(() => {
+    const names = activities.map((activity) =>
+      getUserName(activity)
+    );
+
+    return [...new Set(names)].sort((a, b) =>
+      a.localeCompare(b)
+    );
+  }, [activities, users]);
+
+  // AVAILABLE YEARS FROM ACTIVITY DATES
+  const availableYears = useMemo(() => {
+    const years = activities
+      .map((activity) =>
+        String(activity.logDate || "").slice(0, 4)
+      )
+      .filter((year) => /^\d{4}$/.test(year));
+
+    return [...new Set(years)].sort((a, b) =>
+      b.localeCompare(a)
+    );
+  }, [activities]);
+
+  const months = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+
+  // FILTER ACTIVITIES
+  const filteredActivities = useMemo(() => {
+    return activities.filter((activity) => {
+      const userName = getUserName(activity);
+      const date = String(activity.logDate || "").slice(0, 10);
+
+      const year = date.slice(0, 4);
+      const month = date.slice(5, 7);
+
+      const matchesUser =
+        selectedUser === "all" ||
+        userName === selectedUser;
+
+      const matchesDate =
+        !selectedDate ||
+        date === selectedDate;
+
+      const matchesMonth =
+        selectedMonth === "all" ||
+        month === selectedMonth;
+
+      const matchesYear =
+        selectedYear === "all" ||
+        year === selectedYear;
+
+      return (
+        matchesUser &&
+        matchesDate &&
+        matchesMonth &&
+        matchesYear
+      );
+    });
+  }, [
+    activities,
+    users,
+    selectedUser,
+    selectedDate,
+    selectedMonth,
+    selectedYear,
+  ]);
+
+  const resetFilters = () => {
+    setSelectedUser("all");
+    setSelectedDate("");
+    setSelectedMonth("all");
+    setSelectedYear("all");
+  };
+
+  const filtersActive =
+    selectedUser !== "all" ||
+    selectedDate !== "" ||
+    selectedMonth !== "all" ||
+    selectedYear !== "all";
+
   const deleteActivity = async (id) => {
     if (!window.confirm("Delete this activity?")) return;
 
+    setError("");
+    setMessage("");
+
     try {
-      const response = await fetch(
-        `${API_URL}/api/admin/activities/${id}`,
-        {
-          method: "DELETE",
-          headers,
-        }
-      );
+      await request(`/api/admin/activities/${id}`, {
+        method: "DELETE",
+      });
 
-      if (!response.ok) throw new Error();
-
-      setActivities(
-        activities.filter((activity) => activity.id !== id)
+      setActivities((previous) =>
+        previous.filter((activity) => activity.id !== id)
       );
 
       setMessage("Activity deleted successfully.");
-    } catch {
+    } catch (err) {
+      console.error(err);
       setError("Unable to delete activity.");
     }
   };
@@ -74,22 +227,29 @@ function AdminActivities() {
     setMessage("");
   };
 
-  const updateField = (e) => {
-    setEditing({
-      ...editing,
-      [e.target.name]: e.target.value,
-    });
+  const updateField = (event) => {
+    const { name, value } = event.target;
+
+    setEditing((previous) => ({
+      ...previous,
+      [name]: value,
+    }));
   };
 
-  const saveActivity = async (e) => {
-    e.preventDefault();
+  const saveActivity = async (event) => {
+    event.preventDefault();
+
+    if (!editing) return;
+
+    setSaving(true);
+    setError("");
+    setMessage("");
 
     try {
-      const response = await fetch(
-        `${API_URL}/api/admin/activities/${editing.id}`,
+      await request(
+        `/api/admin/activities/${editing.id}`,
         {
           method: "PUT",
-          headers,
           body: JSON.stringify({
             category: editing.category,
             activityType: editing.activityType,
@@ -100,21 +260,23 @@ function AdminActivities() {
         }
       );
 
-      if (!response.ok) throw new Error();
-
-      const updated = await response.json();
-
-      setActivities(
-        activities.map((activity) =>
-          activity.id === updated.id ? updated : activity
-        )
-      );
-
       setEditing(null);
       setMessage("Activity updated successfully.");
 
-    } catch {
+      const updatedActivities = await request(
+        "/api/admin/activities"
+      );
+
+      setActivities(
+        Array.isArray(updatedActivities)
+          ? updatedActivities
+          : []
+      );
+    } catch (err) {
+      console.error(err);
       setError("Unable to update activity.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -130,6 +292,7 @@ function AdminActivities() {
   return (
     <div className="admin-activities-page">
 
+      {/* HEADER */}
       <div className="activities-header">
         <div>
           <p className="admin-label">ADMIN PANEL</p>
@@ -159,17 +322,141 @@ function AdminActivities() {
         </div>
       )}
 
+      {/* ACTIVITY TABLE */}
       <div className="activity-table-card">
 
         <div className="activity-table-heading">
           <h2>All Activities</h2>
-          <span>{activities.length} records</span>
+          <span>
+            {filteredActivities.length} of {activities.length} records
+          </span>
         </div>
 
+        {/* NEW FILTER SECTION */}
+        <div className="activity-filter-section">
+
+          <div className="activity-filter-heading">
+            <div>
+              <h3>Filter Activities</h3>
+              <p>
+                Refine records by user, date, month, or year.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              className="activity-filter-reset"
+              onClick={resetFilters}
+              disabled={!filtersActive}
+            >
+              ↺ Reset Filters
+            </button>
+          </div>
+
+          <div className="activity-filter-grid">
+
+            {/* USER FILTER */}
+            <div className="activity-filter-field">
+              <label htmlFor="activity-user-filter">
+                User
+              </label>
+
+              <select
+                id="activity-user-filter"
+                value={selectedUser}
+                onChange={(e) =>
+                  setSelectedUser(e.target.value)
+                }
+              >
+                <option value="all">All Users</option>
+
+                {userOptions.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* DATE FILTER */}
+            <div className="activity-filter-field">
+              <label htmlFor="activity-date-filter">
+                Date
+              </label>
+
+              <input
+                id="activity-date-filter"
+                type="date"
+                value={selectedDate}
+                onChange={(e) =>
+                  setSelectedDate(e.target.value)
+                }
+              />
+            </div>
+
+            {/* MONTH FILTER */}
+            <div className="activity-filter-field">
+              <label htmlFor="activity-month-filter">
+                Month
+              </label>
+
+              <select
+                id="activity-month-filter"
+                value={selectedMonth}
+                onChange={(e) =>
+                  setSelectedMonth(e.target.value)
+                }
+              >
+                <option value="all">All Months</option>
+
+                {months.map((month, index) => (
+                  <option
+                    key={month}
+                    value={String(index + 1).padStart(2, "0")}
+                  >
+                    {month}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* YEAR FILTER */}
+            <div className="activity-filter-field">
+              <label htmlFor="activity-year-filter">
+                Year
+              </label>
+
+              <select
+                id="activity-year-filter"
+                value={selectedYear}
+                onChange={(e) =>
+                  setSelectedYear(e.target.value)
+                }
+              >
+                <option value="all">All Years</option>
+
+                {availableYears.map((year) => (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {filtersActive && (
+            <p className="activity-filter-result">
+              Showing {filteredActivities.length} matching{" "}
+              {filteredActivities.length === 1
+                ? "activity"
+                : "activities"}
+            </p>
+          )}
+        </div>
+
+        {/* TABLE */}
         <div className="activity-table-wrapper">
-
           <table className="activity-table">
-
             <thead>
               <tr>
                 <th>ID</th>
@@ -185,15 +472,12 @@ function AdminActivities() {
             </thead>
 
             <tbody>
-
-              {activities.map((activity) => (
-
+              {filteredActivities.map((activity) => (
                 <tr key={activity.id}>
-
                   <td>#{activity.id}</td>
 
                   <td>
-                    {activity.user?.email || "User"}
+                    <strong>{getUserName(activity)}</strong>
                   </td>
 
                   <td>
@@ -203,21 +487,17 @@ function AdminActivities() {
                   </td>
 
                   <td>{activity.activityType}</td>
-
                   <td>{activity.quantity}</td>
-
                   <td>{activity.unit}</td>
-
                   <td>{activity.logDate}</td>
 
                   <td className="emission-value">
-                    {Number(activity.emission || 0).toFixed(2)}
+                    {Number(activity.emission ?? 0).toFixed(2)}
                     {" "}kg
                   </td>
 
                   <td>
                     <div className="activity-actions">
-
                       <button
                         className="activity-edit"
                         onClick={() => openEdit(activity)}
@@ -233,34 +513,34 @@ function AdminActivities() {
                       >
                         🗑 Delete
                       </button>
-
                     </div>
                   </td>
-
                 </tr>
-
               ))}
-
             </tbody>
-
           </table>
-
         </div>
 
-        {activities.length === 0 && (
+        {filteredActivities.length === 0 && (
           <div className="no-activities">
             <div>📊</div>
-            <h3>No activities found</h3>
-            <p>No activity records are currently available.</p>
+            <h3>
+              {activities.length === 0
+                ? "No activities found"
+                : "No matching activities"}
+            </h3>
+            <p>
+              {activities.length === 0
+                ? "No activity records are currently available."
+                : "Try changing or resetting your filters."}
+            </p>
           </div>
         )}
-
       </div>
 
+      {/* EDIT ACTIVITY MODAL */}
       {editing && (
-
         <div className="activity-modal-overlay">
-
           <div className="activity-modal">
 
             <div className="activity-modal-header">
@@ -270,6 +550,7 @@ function AdminActivities() {
               </div>
 
               <button
+                type="button"
                 onClick={() => setEditing(null)}
                 className="activity-close"
               >
@@ -278,7 +559,6 @@ function AdminActivities() {
             </div>
 
             <form onSubmit={saveActivity}>
-
               <div className="activity-form-grid">
 
                 <div>
@@ -308,7 +588,7 @@ function AdminActivities() {
                     step="any"
                     min="0"
                     name="quantity"
-                    value={editing.quantity || ""}
+                    value={editing.quantity ?? ""}
                     onChange={updateField}
                     required
                   />
@@ -329,16 +609,14 @@ function AdminActivities() {
                   <input
                     type="date"
                     name="logDate"
-                    value={editing.logDate || ""}
+                    value={String(editing.logDate || "").slice(0, 10)}
                     onChange={updateField}
                     required
                   />
                 </div>
-
               </div>
 
               <div className="activity-modal-actions">
-
                 <button
                   type="button"
                   onClick={() => setEditing(null)}
@@ -350,20 +628,15 @@ function AdminActivities() {
                 <button
                   type="submit"
                   className="activity-save"
+                  disabled={saving}
                 >
-                  Save Changes
+                  {saving ? "Saving..." : "Save Changes"}
                 </button>
-
               </div>
-
             </form>
-
           </div>
-
         </div>
-
       )}
-
     </div>
   );
 }

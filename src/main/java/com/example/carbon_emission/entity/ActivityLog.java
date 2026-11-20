@@ -91,4 +91,15 @@ public class ActivityLog {
     public void setUser(User user) {
         this.user = user;
     }
+    @com.fasterxml.jackson.annotation.JsonProperty("userId")
+    public Long getUserId() {
+    return user != null ? user.getId() : null;
+    }
+    @com.fasterxml.jackson.annotation.JsonProperty("userName")
+    public String getUserName() {
+    return user != null ? user.getName() : null;
+    }
+    
+
+
 }

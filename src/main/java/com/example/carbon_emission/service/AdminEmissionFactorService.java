@@ -1,3 +1,4 @@
+
 package com.example.carbon_emission.service;
 
 import com.example.carbon_emission.entity.EmissionFactor;
@@ -13,7 +14,6 @@ public class AdminEmissionFactorService {
 
     public AdminEmissionFactorService(
             EmissionFactorRepository repository) {
-
         this.repository = repository;
     }
 
@@ -23,14 +23,20 @@ public class AdminEmissionFactorService {
 
     public EmissionFactor create(EmissionFactor factor) {
 
-        if (repository.findByActivityTypeIgnoreCase(
-                factor.getActivityType()
-        ).isPresent()) {
+        validate(factor);
 
+        if (repository.findByActivityTypeIgnoreCase(
+                factor.getActivityType()).isPresent()) {
             throw new RuntimeException(
                     "Activity type already exists"
             );
         }
+
+        factor.setCategory(factor.getCategory().trim().toLowerCase());
+        factor.setActivityType(
+                factor.getActivityType().trim().toLowerCase()
+        );
+        factor.setUnit(factor.getUnit().trim());
 
         return repository.save(factor);
     }
@@ -43,10 +49,29 @@ public class AdminEmissionFactorService {
                 .orElseThrow(() ->
                         new RuntimeException(
                                 "Emission factor not found"
-                        ));
+                        )
+                );
 
-        existing.setActivityType(updated.getActivityType());
-        existing.setUnit(updated.getUnit());
+        validate(updated);
+
+        String activityType =
+                updated.getActivityType().trim().toLowerCase();
+
+        repository.findByActivityTypeIgnoreCase(activityType)
+                .ifPresent(other -> {
+                    if (!other.getId().equals(id)) {
+                        throw new RuntimeException(
+                                "Activity type already exists"
+                        );
+                    }
+                });
+
+        existing.setCategory(
+                updated.getCategory().trim().toLowerCase()
+        );
+
+        existing.setActivityType(activityType);
+        existing.setUnit(updated.getUnit().trim());
         existing.setFactor(updated.getFactor());
 
         return repository.save(existing);
@@ -61,5 +86,37 @@ public class AdminEmissionFactorService {
         }
 
         repository.deleteById(id);
+    }
+
+    private void validate(EmissionFactor factor) {
+
+        if (factor.getCategory() == null ||
+                factor.getCategory().isBlank()) {
+            throw new RuntimeException(
+                    "Category is required"
+            );
+        }
+
+        if (factor.getActivityType() == null ||
+                factor.getActivityType().isBlank()) {
+            throw new RuntimeException(
+                    "Activity type is required"
+            );
+        }
+
+        if (factor.getUnit() == null ||
+                factor.getUnit().isBlank()) {
+            throw new RuntimeException(
+                    "Unit is required"
+            );
+        }
+
+        if (factor.getFactor() == null ||
+                !Double.isFinite(factor.getFactor()) ||
+                factor.getFactor() < 0) {
+            throw new RuntimeException(
+                    "Enter a valid emission factor"
+            );
+        }
     }
 }

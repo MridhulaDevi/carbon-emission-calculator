@@ -22,60 +22,38 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
 
-@EnableMethodSecurity
 @Configuration
+@EnableMethodSecurity
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    public SecurityConfig(
-            JwtAuthenticationFilter jwtAuthenticationFilter) {
-
-        this.jwtAuthenticationFilter =
-                jwtAuthenticationFilter;
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
-
-    // ================================
     // PASSWORD ENCODER
-    // ================================
-
     @Bean
     public PasswordEncoder passwordEncoder() {
-
         return new BCryptPasswordEncoder();
     }
 
-
-    // ================================
     // CORS CONFIGURATION
-    // ================================
-
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
 
-        CorsConfiguration configuration =
-                new CorsConfiguration();
+        CorsConfiguration configuration = new CorsConfiguration();
 
         configuration.setAllowedOrigins(
                 List.of("http://localhost:5173")
         );
 
         configuration.setAllowedMethods(
-                List.of(
-                        "GET",
-                        "POST",
-                        "PUT",
-                        "DELETE",
-                        "OPTIONS"
-                )
+                List.of("GET", "POST", "PUT", "DELETE", "OPTIONS")
         );
 
         configuration.setAllowedHeaders(
-                List.of(
-                        "Authorization",
-                        "Content-Type"
-                )
+                List.of("Authorization", "Content-Type")
         );
 
         configuration.setExposedHeaders(
@@ -87,74 +65,61 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source =
                 new UrlBasedCorsConfigurationSource();
 
-        source.registerCorsConfiguration(
-                "/**",
-                configuration
-        );
+        source.registerCorsConfiguration("/**", configuration);
 
         return source;
     }
 
-
-    // ================================
     // SECURITY CONFIGURATION
-    // ================================
-
     @Bean
-    public SecurityFilterChain securityFilterChain(
-            HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http)
+            throws Exception {
 
         http
-
-                // CORS
                 .cors(cors ->
-                        cors.configurationSource(
-                                corsConfigurationSource()
-                        )
+                        cors.configurationSource(corsConfigurationSource())
                 )
 
-                // Disable CSRF because we use JWT
-                .csrf(csrf ->
-                        csrf.disable()
-                )
+                .csrf(csrf -> csrf.disable())
 
-                // JWT = stateless
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(
                                 SessionCreationPolicy.STATELESS
                         )
                 )
 
-                // Disable default login
-                .formLogin(form ->
-                        form.disable()
-                )
+                .formLogin(form -> form.disable())
 
-                // Disable basic authentication
-                .httpBasic(basic ->
-                        basic.disable()
-                )
+                .httpBasic(basic -> basic.disable())
 
-                // API authorization
                 .authorizeHttpRequests(auth -> auth
 
-                        // Allow browser preflight requests
+                        // Allow preflight requests
                         .requestMatchers(
-                                HttpMethod.OPTIONS,
-                                "/**"
+                                HttpMethod.OPTIONS, "/**"
                         ).permitAll()
 
-                        // Public authentication APIs
+                        // Public login and registration
                         .requestMatchers(
                                 "/api/auth/register",
                                 "/api/auth/login"
                         ).permitAll()
 
-                        // Everything else requires JWT
+                        // All logged-in users can view emission factors
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/emission-factors"
+                        ).authenticated()
+
+                        // Admin-only emission factor management
+                        .requestMatchers(
+                                "/api/admin/**"
+                        ).hasRole("ADMIN")
+
+                        // Other APIs require login
                         .anyRequest().authenticated()
                 )
 
-                // JWT filter
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class

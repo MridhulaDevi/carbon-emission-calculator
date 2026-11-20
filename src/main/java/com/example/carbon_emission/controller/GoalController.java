@@ -1,10 +1,11 @@
+
 package com.example.carbon_emission.controller;
 
 import com.example.carbon_emission.dto.GoalRequest;
 import com.example.carbon_emission.entity.Goal;
 import com.example.carbon_emission.entity.User;
-import com.example.carbon_emission.repository.GoalRepository;
 import com.example.carbon_emission.repository.UserRepository;
+import com.example.carbon_emission.service.GoalService;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -17,14 +18,13 @@ import java.util.List;
 @CrossOrigin(origins = "http://localhost:5173")
 public class GoalController {
 
-    private final GoalRepository goalRepository;
+    private final GoalService goalService;
     private final UserRepository userRepository;
 
     public GoalController(
-            GoalRepository goalRepository,
+            GoalService goalService,
             UserRepository userRepository) {
-
-        this.goalRepository = goalRepository;
+        this.goalService = goalService;
         this.userRepository = userRepository;
     }
 
@@ -35,27 +35,28 @@ public class GoalController {
 
         try {
             User user = userRepository
-                    .findByEmail(authentication.getName())
-                    .orElseThrow(() ->
-                            new RuntimeException("User not found"));
+                .findByEmail(authentication.getName())
+                .orElseThrow(() ->
+                    new RuntimeException("User not found")
+                );
 
-            Goal goal = new Goal();
-
-            goal.setTitle(request.getTitle());
-            goal.setTarget(request.getTarget());
-            goal.setUnit(request.getUnit());
-            goal.setProgress(0.0);
-            goal.setStatus("ACTIVE");
-            goal.setUser(user);
-
-            return ResponseEntity.ok(
-                    goalRepository.save(goal)
+            Goal goal = goalService.createGoal(
+                user,
+                request.getTitle(),
+                request.getTarget(),
+                request.getStartDate(),
+                request.getEndDate()
             );
 
+            return ResponseEntity.ok(goal);
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                .body(e.getMessage());
+
         } catch (Exception e) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(e.getMessage());
+            return ResponseEntity.internalServerError()
+                .body("Unable to create goal.");
         }
     }
 
@@ -65,19 +66,18 @@ public class GoalController {
 
         try {
             User user = userRepository
-                    .findByEmail(authentication.getName())
-                    .orElseThrow(() ->
-                            new RuntimeException("User not found"));
+                .findByEmail(authentication.getName())
+                .orElseThrow(() ->
+                    new RuntimeException("User not found")
+                );
 
-            List<Goal> goals =
-                    goalRepository.findByUser(user);
+            List<Goal> goals = goalService.getGoals(user);
 
             return ResponseEntity.ok(goals);
 
         } catch (Exception e) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(e.getMessage());
+            return ResponseEntity.internalServerError()
+                .body("Unable to load goals.");
         }
     }
 }

@@ -1,3 +1,4 @@
+
 package com.example.carbon_emission.service;
 
 import com.example.carbon_emission.dto.ActivityLogRequest;
@@ -27,6 +28,7 @@ public class ActivityLogService {
         this.emissionService = emissionService;
     }
 
+    // ADD ACTIVITY
     public ActivityLog addActivity(
             ActivityLogRequest request,
             String email) {
@@ -53,6 +55,7 @@ public class ActivityLogService {
         return activityRepository.save(activity);
     }
 
+    // GET ACTIVITIES
     public List<ActivityLog> getActivities(String email) {
 
         User user = userRepository.findByEmail(email)
@@ -62,6 +65,40 @@ public class ActivityLogService {
         return activityRepository.findByUser(user);
     }
 
+    // UPDATE ACTIVITY
+    public ActivityLog updateActivity(
+            Long id,
+            ActivityLogRequest request,
+            String email) {
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new RuntimeException("User not found"));
+
+        ActivityLog activity = activityRepository.findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException("Activity not found"));
+
+        if (!activity.getUser().getId().equals(user.getId())) {
+            throw new RuntimeException("Access denied");
+        }
+
+        double emission = emissionService.calculateEmission(
+                request.getActivityType(),
+                request.getQuantity()
+        );
+
+        activity.setCategory(request.getCategory());
+        activity.setActivityType(request.getActivityType());
+        activity.setQuantity(request.getQuantity());
+        activity.setUnit(request.getUnit());
+        activity.setLogDate(request.getLogDate());
+        activity.setEmission(emission);
+
+        return activityRepository.save(activity);
+    }
+
+    // DELETE ACTIVITY
     public void deleteActivity(Long id, String email) {
 
         User user = userRepository.findByEmail(email)

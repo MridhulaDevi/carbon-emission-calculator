@@ -1,44 +1,56 @@
+
 import React, { useEffect, useState } from "react";
 import "./AdminEmissionFactors.css";
 
 const API_URL = "http://localhost:8080";
 
+const CATEGORIES = [
+  "transport",
+  "electricity",
+  "food",
+  "shopping"
+];
+
+const emptyForm = {
+  category: "",
+  activityType: "",
+  unit: "",
+  factor: ""
+};
+
 function AdminEmissionFactors() {
   const [factors, setFactors] = useState([]);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({
-    activityType: "",
-    unit: "",
-    factor: "",
-  });
+  const [form, setForm] = useState({ ...emptyForm });
 
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  const token = localStorage.getItem("token");
-
-  const headers = {
+  const getHeaders = () => ({
     "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
-  };
+    Authorization: `Bearer ${localStorage.getItem("token")}`
+  });
 
   const loadFactors = async () => {
     try {
       setLoading(true);
+      setError("");
 
       const response = await fetch(
         `${API_URL}/api/admin/emission-factors`,
-        { headers }
+        { headers: getHeaders() }
       );
 
-      if (!response.ok) throw new Error();
+      if (!response.ok) {
+        throw new Error(`Server error (${response.status})`);
+      }
 
-      setFactors(await response.json());
-      setError("");
-
-    } catch {
-      setError("Unable to load emission factors.");
+      const data = await response.json();
+      setFactors(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setError(err.message || "Unable to load emission factors.");
     } finally {
       setLoading(false);
     }
@@ -49,24 +61,43 @@ function AdminEmissionFactors() {
   }, []);
 
   const handleChange = (e) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+
+    setForm((previous) => ({
+      ...previous,
+      [name]: value
+    }));
   };
 
   const resetForm = () => {
-    setForm({
-      activityType: "",
-      unit: "",
-      factor: "",
-    });
-
+    setForm({ ...emptyForm });
     setEditing(null);
   };
 
   const saveFactor = async (e) => {
     e.preventDefault();
+
+    setError("");
+    setMessage("");
+
+    if (!form.category) {
+      setError("Please select a category.");
+      return;
+    }
+
+    if (!form.activityType.trim()) {
+      setError("Please enter an activity type.");
+      return;
+    }
+
+    const factorValue = Number(form.factor);
+
+    if (!Number.isFinite(factorValue) || factorValue < 0) {
+      setError("Please enter a valid emission factor.");
+      return;
+    }
+
+    setSaving(true);
 
     try {
       const url = editing
@@ -75,38 +106,33 @@ function AdminEmissionFactors() {
 
       const response = await fetch(url, {
         method: editing ? "PUT" : "POST",
-        headers,
+        headers: getHeaders(),
         body: JSON.stringify({
-          activityType: form.activityType,
-          unit: form.unit,
-          factor: Number(form.factor),
-        }),
+          category: form.category,
+          activityType: form.activityType.trim().toLowerCase(),
+          unit: form.unit.trim(),
+          factor: factorValue
+        })
       });
 
       if (!response.ok) {
         const text = await response.text();
-        throw new Error(text);
-      }
-
-      const saved = await response.json();
-
-      if (editing) {
-        setFactors(
-          factors.map((factor) =>
-            factor.id === saved.id ? saved : factor
-          )
-        );
-
-        setMessage("Emission factor updated successfully.");
-      } else {
-        setFactors([...factors, saved]);
-        setMessage("Emission factor added successfully.");
+        throw new Error(text || "Unable to save emission factor.");
       }
 
       resetForm();
 
+      setMessage(
+        editing
+          ? "Emission factor updated successfully."
+          : "Emission factor added successfully."
+      );
+
+      await loadFactors();
     } catch (err) {
       setError(err.message || "Unable to save emission factor.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -114,41 +140,65 @@ function AdminEmissionFactors() {
     setEditing(factor);
 
     setForm({
+      category: factor.category || "",
       activityType: factor.activityType || "",
       unit: factor.unit || "",
-      factor: factor.factor ?? "",
+      factor: factor.factor ?? ""
     });
 
-    setMessage("");
     setError("");
+    setMessage("");
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const deleteFactor = async (id) => {
     if (!window.confirm("Delete this emission factor?")) return;
+
+    setError("");
+    setMessage("");
 
     try {
       const response = await fetch(
         `${API_URL}/api/admin/emission-factors/${id}`,
         {
           method: "DELETE",
-          headers,
+          headers: getHeaders()
         }
       );
 
-      if (!response.ok) throw new Error();
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || "Unable to delete emission factor.");
+      }
 
-      setFactors(
-        factors.filter((factor) => factor.id !== id)
+      setFactors((previous) =>
+        previous.filter((factor) => factor.id !== id)
       );
 
       setMessage("Emission factor deleted successfully.");
 
-    } catch {
-      setError("Unable to delete emission factor.");
+      if (editing?.id === id) {
+        resetForm();
+      }
+    } catch (err) {
+      setError(err.message || "Unable to delete emission factor.");
     }
   };
 
-  if (loading) {
+  const formatCategory = (category) => {
+    if (!category) return "Not assigned";
+
+    return category.charAt(0).toUpperCase() + category.slice(1);
+  };
+
+  const availableCategories = [
+    ...new Set([
+      ...CATEGORIES,
+      ...factors.map((factor) => factor.category).filter(Boolean)
+    ])
+  ];
+
+  if (loading && factors.length === 0) {
     return (
       <div className="factor-loading">
         <div className="factor-spinner"></div>
@@ -159,9 +209,7 @@ function AdminEmissionFactors() {
 
   return (
     <div className="admin-factors-page">
-
       <div className="factor-header">
-
         <div>
           <p className="admin-label">ADMIN PANEL</p>
           <h1>Emission Factors</h1>
@@ -173,10 +221,10 @@ function AdminEmissionFactors() {
         <button
           className="factor-refresh"
           onClick={loadFactors}
+          disabled={loading}
         >
           ↻ Refresh
         </button>
-
       </div>
 
       {message && (
@@ -192,28 +240,39 @@ function AdminEmissionFactors() {
       )}
 
       <div className="factor-layout">
-
-        {/* FORM */}
-
         <div className="factor-form-card">
-
           <h2>
             {editing
               ? "Edit Emission Factor"
               : "Add Emission Factor"}
           </h2>
 
-          <p>
-            Define the CO₂e value for an activity type.
-          </p>
+          <p>Define the CO₂e value for an activity type.</p>
 
           <form onSubmit={saveFactor}>
+            <label>Category</label>
 
-            <label>Activity Type</label>
+            <select
+              name="category"
+              value={form.category}
+              onChange={handleChange}
+              required
+              className="factor-category-select"
+            >
+              <option value="">Select category</option>
+
+              {availableCategories.map((category) => (
+                <option key={category} value={category}>
+                  {formatCategory(category)}
+                </option>
+              ))}
+            </select>
+
+            <label>Activity Type / Subcategory</label>
 
             <input
               name="activityType"
-              placeholder="Example: car"
+              placeholder="Example: jeep"
               value={form.activityType}
               onChange={handleChange}
               required
@@ -243,9 +302,16 @@ function AdminEmissionFactors() {
             />
 
             <div className="factor-form-buttons">
-
-              <button type="submit" className="factor-save">
-                {editing ? "Save Changes" : "Add Factor"}
+              <button
+                type="submit"
+                className="factor-save"
+                disabled={saving}
+              >
+                {saving
+                  ? "Saving..."
+                  : editing
+                    ? "Save Changes"
+                    : "Add Factor"}
               </button>
 
               {editing && (
@@ -257,17 +323,11 @@ function AdminEmissionFactors() {
                   Cancel
                 </button>
               )}
-
             </div>
-
           </form>
-
         </div>
 
-        {/* TABLE */}
-
         <div className="factor-table-card">
-
           <div className="factor-table-header">
             <div>
               <h2>Configured Factors</h2>
@@ -276,12 +336,11 @@ function AdminEmissionFactors() {
           </div>
 
           <div className="factor-table-wrapper">
-
             <table>
-
               <thead>
                 <tr>
                   <th>ID</th>
+                  <th>Category</th>
                   <th>Activity Type</th>
                   <th>Unit</th>
                   <th>Factor</th>
@@ -290,12 +349,15 @@ function AdminEmissionFactors() {
               </thead>
 
               <tbody>
-
                 {factors.map((factor) => (
-
                   <tr key={factor.id}>
-
                     <td>#{factor.id}</td>
+
+                    <td>
+                      <span className="factor-category-badge">
+                        {formatCategory(factor.category)}
+                      </span>
+                    </td>
 
                     <td>
                       <strong>{factor.activityType}</strong>
@@ -311,7 +373,6 @@ function AdminEmissionFactors() {
 
                     <td>
                       <div className="factor-actions">
-
                         <button
                           className="factor-edit"
                           onClick={() => editFactor(factor)}
@@ -321,24 +382,16 @@ function AdminEmissionFactors() {
 
                         <button
                           className="factor-delete"
-                          onClick={() =>
-                            deleteFactor(factor.id)
-                          }
+                          onClick={() => deleteFactor(factor.id)}
                         >
                           🗑 Delete
                         </button>
-
                       </div>
                     </td>
-
                   </tr>
-
                 ))}
-
               </tbody>
-
             </table>
-
           </div>
 
           {factors.length === 0 && (
@@ -348,11 +401,8 @@ function AdminEmissionFactors() {
               <p>Add your first emission factor.</p>
             </div>
           )}
-
         </div>
-
       </div>
-
     </div>
   );
 }

@@ -1,3 +1,4 @@
+
 package com.example.carbon_emission.controller;
 
 import com.example.carbon_emission.dto.ActivityLogRequest;
@@ -17,9 +18,7 @@ public class ActivityLogController {
 
     private final ActivityLogService activityService;
 
-    public ActivityLogController(
-            ActivityLogService activityService) {
-
+    public ActivityLogController(ActivityLogService activityService) {
         this.activityService = activityService;
     }
 
@@ -30,20 +29,15 @@ public class ActivityLogController {
             Authentication authentication) {
 
         try {
-
-            ActivityLog activity =
-                    activityService.addActivity(
-                            request,
-                            authentication.getName()
-                    );
+            ActivityLog activity = activityService.addActivity(
+                    request,
+                    authentication.getName()
+            );
 
             return ResponseEntity.ok(activity);
 
         } catch (Exception e) {
-
-            return ResponseEntity
-                    .badRequest()
-                    .body(e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
@@ -53,19 +47,35 @@ public class ActivityLogController {
             Authentication authentication) {
 
         try {
-
-            List<ActivityLog> activities =
-                    activityService.getActivities(
-                            authentication.getName()
-                    );
+            List<ActivityLog> activities = activityService.getActivities(
+                    authentication.getName()
+            );
 
             return ResponseEntity.ok(activities);
 
         } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 
-            return ResponseEntity
-                    .badRequest()
-                    .body(e.getMessage());
+    // UPDATE ACTIVITY
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateActivity(
+            @PathVariable Long id,
+            @RequestBody ActivityLogRequest request,
+            Authentication authentication) {
+
+        try {
+            ActivityLog activity = activityService.updateActivity(
+                    id,
+                    request,
+                    authentication.getName()
+            );
+
+            return ResponseEntity.ok(activity);
+
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
@@ -76,7 +86,6 @@ public class ActivityLogController {
             Authentication authentication) {
 
         try {
-
             activityService.deleteActivity(
                     id,
                     authentication.getName()
@@ -87,10 +96,7 @@ public class ActivityLogController {
             );
 
         } catch (Exception e) {
-
-            return ResponseEntity
-                    .badRequest()
-                    .body(e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 }

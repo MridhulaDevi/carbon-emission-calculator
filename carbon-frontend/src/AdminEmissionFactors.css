@@ -1,115 +1,196 @@
+
+/* =========================================
+   CARBONDOWN — ADMIN EMISSION FACTORS
+   ========================================= */
+
 .admin-factors-page {
+  --factor-navy: #10232c;
+  --factor-green: #18785e;
+  --factor-dark-green: #103f34;
+  --factor-sage: #eaf3ee;
+  --factor-background: #f5f8f6;
+  --factor-border: #e2eae5;
+  --factor-muted: #758780;
+
+  width: 100%;
   min-height: 100vh;
-  padding: 35px;
-  background: #f6f8f7;
-  color: #1f2933;
+  padding: 30px 36px 55px;
+  background: var(--factor-background);
+  color: var(--factor-navy);
+  font-family: inherit;
+  box-sizing: border-box;
 }
 
-.factor-loading {
-  min-height: 70vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
+.admin-factors-page *,
+.admin-factors-page *::before,
+.admin-factors-page *::after {
+  box-sizing: border-box;
 }
 
-.factor-spinner {
-  width: 35px;
-  height: 35px;
-  border: 4px solid #dce9e2;
-  border-top-color: #2e7d5b;
-  border-radius: 50%;
-  animation: factorSpin 0.8s linear infinite;
-  margin-bottom: 15px;
-}
-
-@keyframes factorSpin {
-  to {
-    transform: rotate(360deg);
-  }
-}
+/* =========================================
+   PAGE HEADER
+   ========================================= */
 
 .factor-header {
+  position: relative;
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  margin-bottom: 25px;
+  gap: 24px;
+
+  min-height: 180px;
+  margin-bottom: 28px;
+  padding: 36px 42px;
+
+  border-radius: 22px;
+  overflow: hidden;
+
+  background: linear-gradient(
+    115deg,
+    #102832 0%,
+    #14453b 58%,
+    #286b51 100%
+  );
+
+  color: #ffffff;
+}
+
+.factor-header::after {
+  content: "";
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  right: -110px;
+  top: -180px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.factor-header > * {
+  position: relative;
+  z-index: 1;
+}
+
+.factor-header .admin-label {
+  margin: 0 0 13px;
+  color: #a7d8c1;
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 2px;
 }
 
 .factor-header h1 {
+  margin: 0 0 10px;
+  color: #ffffff;
+  font-size: clamp(26px, 2.4vw, 34px);
+  font-weight: 750;
+  letter-spacing: -1px;
+  line-height: 1.2;
+}
+
+.factor-header p:not(.admin-label) {
   margin: 0;
-  font-size: 30px;
-}
-
-.factor-header p:last-child {
-  color: #6b7280;
+  color: #c3d7d0;
   font-size: 14px;
-}
-
-.admin-label {
-  margin: 0 0 7px;
-  color: #2e7d5b;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 1.5px;
+  line-height: 1.7;
 }
 
 .factor-refresh {
-  height: 40px;
-  padding: 0 18px;
-  border: none;
-  border-radius: 8px;
-  background: #2e7d5b;
-  color: white;
-  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  min-height: 43px;
+  padding: 0 19px;
+
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 10px;
+
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 650;
   cursor: pointer;
+  white-space: nowrap;
+
+  transition: background 0.2s, transform 0.2s;
 }
+
+.factor-refresh:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.factor-refresh:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* =========================================
+   NOTIFICATIONS
+   ========================================= */
 
 .factor-success,
 .factor-error {
-  padding: 12px 16px;
-  border-radius: 8px;
-  margin-bottom: 18px;
+  padding: 15px 19px;
+  margin-bottom: 22px;
+  border-radius: 11px;
+  font-size: 13px;
+  font-weight: 550;
+  line-height: 1.6;
 }
 
 .factor-success {
-  background: #eaf7ef;
-  color: #26734d;
+  background: #e8f5ed;
+  border: 1px solid #c9e6d5;
+  color: #176747;
 }
 
 .factor-error {
-  background: #fff0f0;
-  color: #b42318;
+  background: #fff1f0;
+  border: 1px solid #f1d1ce;
+  color: #a43d36;
 }
+
+/* =========================================
+   MAIN LAYOUT
+   ========================================= */
 
 .factor-layout {
   display: grid;
-  grid-template-columns: 330px 1fr;
-  gap: 22px;
+  grid-template-columns: minmax(290px, 350px) minmax(0, 1fr);
+  align-items: start;
+  gap: 24px;
 }
 
-.factor-form-card,
-.factor-table-card {
-  background: white;
-  border: 1px solid #e5e9e7;
-  border-radius: 14px;
-  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.04);
-}
+/* =========================================
+   FORM CARD
+   ========================================= */
 
 .factor-form-card {
-  padding: 24px;
-  height: fit-content;
+  background: #ffffff;
+  border: 1px solid var(--factor-border);
+  border-radius: 18px;
+  padding: 28px;
+  box-shadow: 0 5px 22px rgba(16, 44, 34, 0.035);
 }
 
-.factor-form-card h2,
-.factor-table-header h2 {
-  margin: 0;
+.factor-form-card h2 {
+  margin: 0 0 9px;
+  color: var(--factor-navy);
   font-size: 19px;
+  font-weight: 750;
+  letter-spacing: -0.5px;
 }
 
-.factor-form-card p {
-  color: #6b7280;
+.factor-form-card > p {
+  margin: 0 0 27px;
+  color: var(--factor-muted);
   font-size: 13px;
-  margin-bottom: 22px;
+  line-height: 1.7;
 }
 
 .factor-form-card form {
@@ -118,133 +199,427 @@
 }
 
 .factor-form-card label {
-  margin: 12px 0 7px;
+  display: block;
+  margin: 0 0 9px;
+  color: #29483e;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1px;
+}
+
+.factor-form-card input,
+.factor-form-card select,
+.factor-form-card select.factor-category-select {
+  display: block;
+  width: 100%;
+  height: 47px;
+
+  margin: 0 0 21px;
+  padding: 0 14px;
+
+  background: #fbfdfb;
+  border: 1px solid #dce6df;
+  border-radius: 10px;
+
+  color: #193c30;
+  font-family: inherit;
   font-size: 13px;
-  font-weight: 600;
-}
+  font-weight: 500;
 
-.factor-form-card input {
-  padding: 11px 12px;
-  border: 1px solid #d8dfdb;
-  border-radius: 7px;
   outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.factor-form-card input:focus {
-  border-color: #2e7d5b;
+.factor-form-card input::placeholder {
+  color: #98a8a0;
+  font-weight: 400;
 }
+
+.factor-form-card select,
+.factor-form-card select.factor-category-select {
+  cursor: pointer;
+  appearance: auto;
+}
+
+.factor-form-card input:focus,
+.factor-form-card select:focus,
+.factor-form-card select.factor-category-select:focus {
+  border-color: #258a69;
+  box-shadow: 0 0 0 3px rgba(37, 138, 105, 0.1);
+  background: #ffffff;
+}
+
+.factor-form-card input:hover,
+.factor-form-card select:hover {
+  border-color: #a9c5b6;
+}
+
+/* =========================================
+   FORM BUTTONS
+   ========================================= */
 
 .factor-form-buttons {
   display: flex;
-  gap: 8px;
-  margin-top: 22px;
-}
-
-.factor-save,
-.factor-cancel {
-  border: none;
-  border-radius: 7px;
-  padding: 10px 15px;
-  cursor: pointer;
-  font-weight: 600;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 3px;
 }
 
 .factor-save {
-  background: #2e7d5b;
-  color: white;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 45px;
+  padding: 0 23px;
+
+  background: var(--factor-green);
+  color: #ffffff;
+  border: 1px solid transparent;
+  border-radius: 10px;
+
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+
+  transition: background 0.2s, transform 0.2s;
+}
+
+.factor-save:hover {
+  background: #12634e;
+  transform: translateY(-1px);
+}
+
+.factor-save:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .factor-cancel {
-  background: #eef1ef;
+  min-height: 45px;
+  padding: 0 19px;
+
+  background: #f1f5f2;
+  border: 1px solid #dce7df;
+  border-radius: 10px;
+
+  color: #425d51;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.factor-cancel:hover {
+  background: #e5eee8;
+}
+
+/* =========================================
+   FACTORS TABLE CARD
+   ========================================= */
+
+.factor-table-card {
+  min-width: 0;
+  overflow: hidden;
+
+  background: #ffffff;
+  border: 1px solid var(--factor-border);
+  border-radius: 18px;
+  box-shadow: 0 5px 22px rgba(16, 44, 34, 0.035);
 }
 
 .factor-table-header {
-  padding: 22px 24px;
-  border-bottom: 1px solid #edf0ee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+
+  min-height: 100px;
+  padding: 25px 28px;
+  border-bottom: 1px solid var(--factor-border);
+}
+
+.factor-table-header h2 {
+  margin: 0 0 8px;
+  color: var(--factor-navy);
+  font-size: 19px;
+  font-weight: 750;
+  letter-spacing: -0.4px;
 }
 
 .factor-table-header p {
-  color: #6b7280;
-  font-size: 13px;
-}
-
-.factor-table-wrapper {
-  overflow-x: auto;
-}
-
-.factor-table-card table {
-  width: 100%;
-  min-width: 650px;
-  border-collapse: collapse;
-}
-
-.factor-table-card th {
-  background: #f8faf9;
-  padding: 14px 16px;
-  text-align: left;
-  color: #66736c;
+  margin: 0;
+  color: var(--factor-muted);
   font-size: 12px;
 }
 
-.factor-table-card td {
-  padding: 15px 16px;
-  border-top: 1px solid #edf0ee;
-  font-size: 13px;
+.factor-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
 }
 
-.factor-number {
-  color: #2e7d5b;
-  font-weight: 700;
+.factor-table-wrapper table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+  text-align: left;
 }
+
+.factor-table-wrapper thead {
+  background: #f5f8f6;
+}
+
+.factor-table-wrapper th {
+  padding: 17px 19px;
+  border-bottom: 1px solid var(--factor-border);
+
+  color: #60766b;
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+.factor-table-wrapper td {
+  padding: 18px 19px;
+  border-bottom: 1px solid #edf1ee;
+
+  color: #3b5147;
+  font-size: 12px;
+  line-height: 1.5;
+  vertical-align: middle;
+}
+
+.factor-table-wrapper tbody tr {
+  transition: background 0.2s;
+}
+
+.factor-table-wrapper tbody tr:hover {
+  background: #f7faf8;
+}
+
+.factor-table-wrapper tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.factor-table-wrapper td:first-child {
+  color: #82948a;
+  font-weight: 600;
+}
+
+.factor-table-wrapper td strong {
+  color: #1c382e;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+/* =========================================
+   CATEGORY BADGE
+   ========================================= */
+
+.factor-category-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 6px 11px;
+  border-radius: 7px;
+
+  background: #e9f3ed;
+  color: #237454;
+
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* =========================================
+   EMISSION FACTOR VALUE
+   ========================================= */
+
+.factor-number {
+  color: #167356;
+  font-size: 12px;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* =========================================
+   ACTION BUTTONS
+   ========================================= */
 
 .factor-actions {
   display: flex;
-  gap: 7px;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
 }
 
 .factor-edit,
 .factor-delete {
-  border: none;
-  padding: 7px 10px;
-  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 34px;
+  padding: 0 12px;
+
+  border: 1px solid transparent;
+  border-radius: 8px;
+
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
   cursor: pointer;
-  font-size: 12px;
-  font-weight: 600;
+
+  transition: background 0.2s, transform 0.2s;
 }
 
 .factor-edit {
-  background: #edf4ff;
-  color: #3267a8;
+  background: #eaf2ed;
+  color: #27654d;
+}
+
+.factor-edit:hover {
+  background: #dcebe1;
+  transform: translateY(-1px);
 }
 
 .factor-delete {
-  background: #fff0f0;
-  color: #c43d3d;
+  background: #f7eeee;
+  color: #a34a47;
 }
+
+.factor-delete:hover {
+  background: #f0e1e1;
+  transform: translateY(-1px);
+}
+
+/* =========================================
+   EMPTY STATE
+   ========================================= */
 
 .factor-empty {
+  padding: 65px 25px;
   text-align: center;
-  padding: 55px;
-  color: #6b7280;
+  color: #81948a;
+  font-size: 26px;
 }
 
-.factor-empty:first-letter {
-  font-size: 35px;
+.factor-empty h3 {
+  margin: 15px 0 8px;
+  color: #213e32;
+  font-size: 17px;
+}
+
+.factor-empty p {
+  margin: 0;
+  font-size: 13px;
+}
+
+/* =========================================
+   LOADING STATE
+   ========================================= */
+
+.factor-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+
+  min-height: 65vh;
+  background: #f5f8f6;
+  color: #49695a;
+}
+
+.factor-spinner {
+  width: 35px;
+  height: 35px;
+
+  border: 3px solid #dceae0;
+  border-top-color: #18785e;
+  border-radius: 50%;
+
+  animation: factorSpin 0.8s linear infinite;
+}
+
+@keyframes factorSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* =========================================
+   RESPONSIVE
+   ========================================= */
+
+@media (max-width: 1150px) {
+  .factor-layout {
+    grid-template-columns: minmax(260px, 310px) minmax(0, 1fr);
+    gap: 18px;
+  }
+
+  .factor-form-card {
+    padding: 23px;
+  }
+
+  .factor-table-wrapper th,
+  .factor-table-wrapper td {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
 }
 
 @media (max-width: 900px) {
+  .admin-factors-page {
+    padding: 22px;
+  }
+
   .factor-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .factor-form-card {
+    max-width: none;
   }
 }
 
-@media (max-width: 650px) {
+@media (max-width: 600px) {
   .admin-factors-page {
-    padding: 20px;
+    padding: 15px;
   }
 
   .factor-header {
+    min-height: auto;
     flex-direction: column;
-    gap: 15px;
+    align-items: flex-start;
+    padding: 28px 24px;
+    border-radius: 16px;
+  }
+
+  .factor-header h1 {
+    font-size: 27px;
+  }
+
+  .factor-refresh {
+    width: 100%;
+  }
+
+  .factor-form-card,
+  .factor-table-card {
+    border-radius: 14px;
+  }
+
+  .factor-form-card {
+    padding: 23px 19px;
+  }
+
+  .factor-table-header {
+    padding: 22px 19px;
   }
 }

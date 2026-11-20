@@ -1,6 +1,8 @@
-import { useState } from "react";
+
+import { useEffect, useState } from "react";
 import "./App.css";
 
+import LandingPage from "./LandingPage";
 import Sidebar from "./Sidebar";
 import Dashboard from "./Dashboard";
 import Activities from "./Activities";
@@ -16,38 +18,54 @@ import AdminEmissionFactors from "./AdminEmissionFactors";
 
 const API = "http://localhost:8080";
 
-function App() {
+const emptyLogin = {
+  email: "",
+  password: "",
+};
 
+const emptyRegister = {
+  name: "",
+  email: "",
+  password: "",
+  confirmPassword: "",
+  gender: "",
+  age: "",
+};
+
+function App() {
   const [token, setToken] = useState(
     localStorage.getItem("token") || ""
   );
 
   const [page, setPage] = useState(
-    localStorage.getItem("token") ? "dashboard" : "login"
+    localStorage.getItem("token") ? "dashboard" : "landing"
   );
 
-  const [loginData, setLoginData] = useState({
-    email: "",
-    password: ""
-  });
-
-  const [registerData, setRegisterData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    gender: "",
-    age: ""
-  });
+  const [loginData, setLoginData] = useState(emptyLogin);
+  const [registerData, setRegisterData] = useState(emptyRegister);
 
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // =========================
+  // ==============================
+  // PAGE NAVIGATION
+  // ==============================
+
+  const navigate = (nextPage) => {
+    setPage(nextPage);
+    setMessage("");
+    window.scrollTo(0, 0);
+  };
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [page]);
+
+  // ==============================
   // LOGIN
-  // =========================
+  // ==============================
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -59,9 +77,9 @@ function App() {
       const response = await fetch(`${API}/api/auth/login`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify(loginData)
+        body: JSON.stringify(loginData),
       });
 
       const data = await response.text();
@@ -71,42 +89,35 @@ function App() {
         return;
       }
 
-      localStorage.setItem("token", data);
+      const receivedToken = data.trim();
 
-      setToken(data);
+      if (!receivedToken) {
+        setMessage("Login failed: no token received.");
+        return;
+      }
 
-      setPage("dashboard");
+      localStorage.setItem("token", receivedToken);
 
-      setLoginData({
-        email: "",
-        password: ""
-      });
-
+      setToken(receivedToken);
+      setLoginData(emptyLogin);
+      navigate("dashboard");
     } catch (error) {
-
       setMessage("Cannot connect to server.");
-
     } finally {
-
       setLoading(false);
-
     }
   };
 
-
-  // =========================
+  // ==============================
   // REGISTER
-  // =========================
+  // ==============================
 
   const handleRegister = async (e) => {
-
     e.preventDefault();
-
     setMessage("");
 
     if (
-      registerData.password !==
-      registerData.confirmPassword
+      registerData.password !== registerData.confirmPassword
     ) {
       setMessage("Passwords do not match.");
       return;
@@ -122,21 +133,20 @@ function App() {
     setLoading(true);
 
     try {
-
       const response = await fetch(
         `${API}/api/auth/register`,
         {
           method: "POST",
           headers: {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({
             name: registerData.name,
             email: registerData.email,
             password: registerData.password,
             gender: registerData.gender,
-            age: Number(registerData.age)
-          })
+            age: Number(registerData.age),
+          }),
         }
       );
 
@@ -147,216 +157,59 @@ function App() {
         return;
       }
 
+      setRegisterData(emptyRegister);
+      navigate("login");
       setMessage(
         "Registration successful. Please sign in."
       );
-
-      setRegisterData({
-        name: "",
-        email: "",
-        password: "",
-        confirmPassword: "",
-        gender: "",
-        age: ""
-      });
-
-      setTimeout(() => {
-
-        setPage("login");
-        setMessage("");
-
-      }, 1200);
-
     } catch (error) {
-
       setMessage("Cannot connect to server.");
-
     } finally {
-
       setLoading(false);
-
     }
   };
 
-
-  // =========================
+  // ==============================
   // LOGOUT
-  // =========================
+  // ==============================
 
   const logout = () => {
-
     localStorage.removeItem("token");
     localStorage.removeItem("user");
 
     setToken("");
-
-    setPage("login");
-
+    setLoginData(emptyLogin);
     setMessage("");
+    navigate("landing");
   };
 
+  // ==============================
+  // LANDING PAGE
+  // ==============================
 
-  // =========================
-  // ACTIVITY LOGGER
-  // =========================
-
-  const [activity, setActivity] = useState({
-
-    category: "transport",
-
-    activityType: "car",
-
-    quantity: "",
-
-    unit: "km",
-
-    logDate:
-      new Date()
-        .toISOString()
-        .split("T")[0]
-  });
-
-
-  const handleCategoryChange = (category) => {
-
-    const defaults = {
-
-      transport: {
-        activityType: "car",
-        unit: "km"
-      },
-
-      electricity: {
-        activityType: "electricity",
-        unit: "kWh"
-      },
-
-      food: {
-        activityType: "vegetarian_meal",
-        unit: "servings"
-      },
-
-      shopping: {
-        activityType: "clothing",
-        unit: "items"
-      }
-
-    };
-
-    setActivity({
-
-      ...activity,
-
-      category,
-
-      ...defaults[category]
-
-    });
-  };
-
-
-  const addActivity = async (e) => {
-
-    e.preventDefault();
-
-    setMessage("");
-
-    try {
-
-      const response = await fetch(
-        `${API}/api/activities`,
-        {
-          method: "POST",
-
-          headers: {
-
-            "Content-Type":
-              "application/json",
-
-            Authorization:
-              `Bearer ${token}`
-
-          },
-
-          body: JSON.stringify({
-
-            ...activity,
-
-            quantity:
-              Number(activity.quantity)
-
-          })
-        }
-      );
-
-      if (!response.ok) {
-
-        throw new Error(
-          await response.text()
-        );
-
-      }
-
-      setActivity({
-
-        category: "transport",
-
-        activityType: "car",
-
-        quantity: "",
-
-        unit: "km",
-
-        logDate:
-          new Date()
-            .toISOString()
-            .split("T")[0]
-
-      });
-
-      setMessage(
-        "Activity added successfully!"
-      );
-
-      setRefreshKey(
-        value => value + 1
-      );
-
-    } catch (err) {
-
-      setMessage(
-        err.message ||
-        "Unable to add activity."
-      );
-
-    }
-  };
-
-
-  // =========================
-  // LOGIN PAGE
-  // =========================
-
-  if (page === "login") {
-
+  if (page === "landing" && !token) {
     return (
+      <LandingPage
+        onRegister={() => navigate("register")}
+        onSignIn={() => navigate("login")}
+      />
+    );
+  }
 
+  // ==============================
+  // LOGIN PAGE
+  // ==============================
+
+  if (page === "login" && !token) {
+    return (
       <div className="auth-page">
-
         <div className="auth-visual">
-
           <div className="logo">
-
-            <span className="logo-mark">
-              ↗
-            </span>
-
+            <span className="logo-mark">↗</span>
             CarbonDown
-
           </div>
 
           <div className="visual-content">
-
             <span className="tag">
               PERSONAL CLIMATE TRACKER
             </span>
@@ -368,13 +221,12 @@ function App() {
             </h1>
 
             <p>
-              Track everyday choices, understand
-              your carbon footprint and take
-              meaningful steps toward a lighter future.
+              Track everyday choices, understand your
+              carbon footprint and take meaningful
+              steps toward a lighter future.
             </p>
 
             <div className="visual-stats">
-
               <div>
                 <strong>01</strong>
                 <span>Track</span>
@@ -389,131 +241,102 @@ function App() {
                 <strong>03</strong>
                 <span>Reduce</span>
               </div>
-
             </div>
-
           </div>
 
           <div className="visual-bottom">
-
-            <span>
-              Small choices. Real impact.
-            </span>
-
-            <span>
-              CarbonDown © 2026
-            </span>
-
+            <span>Small choices. Real impact.</span>
+            <span>CarbonDown © 2026</span>
           </div>
-
         </div>
 
-
         <div className="auth-card-area">
-
           <div className="auth-card">
+            <button
+              type="button"
+              className="back-link"
+              onClick={() => navigate("landing")}
+            >
+              ← Back to Home
+            </button>
 
             <div className="mobile-logo">
-
-              <span className="logo-mark">
-                ↗
-              </span>
-
+              <span className="logo-mark">↗</span>
               CarbonDown
-
             </div>
 
             <span className="form-label">
               WELCOME BACK
             </span>
 
-            <h2>
-              Sign in to your journey.
-            </h2>
+            <h2>Sign in to your journey.</h2>
 
             <p className="form-description">
               Continue tracking the choices that matter.
             </p>
 
-
             <form onSubmit={handleLogin}>
-
-              <label>
+              <label htmlFor="login-email">
                 Email address
               </label>
 
               <input
+                id="login-email"
                 type="email"
                 placeholder="you@example.com"
                 value={loginData.email}
                 onChange={(e) =>
                   setLoginData({
                     ...loginData,
-                    email: e.target.value
+                    email: e.target.value,
                   })
                 }
                 required
               />
 
-
               <div className="password-label">
-
-                <label>
+                <label htmlFor="login-password">
                   Password
                 </label>
 
                 <button
                   type="button"
                   onClick={() =>
-                    setShowPassword(
-                      !showPassword
-                    )
+                    setShowPassword(!showPassword)
                   }
                 >
-                  {showPassword
-                    ? "Hide"
-                    : "Show"}
+                  {showPassword ? "Hide" : "Show"}
                 </button>
-
               </div>
 
-
               <input
+                id="login-password"
                 type={
-                  showPassword
-                    ? "text"
-                    : "password"
+                  showPassword ? "text" : "password"
                 }
                 placeholder="Enter your password"
                 value={loginData.password}
                 onChange={(e) =>
                   setLoginData({
                     ...loginData,
-                    password: e.target.value
+                    password: e.target.value,
                   })
                 }
                 required
               />
-
 
               <button
                 className="main-button"
                 type="submit"
                 disabled={loading}
               >
-
                 {loading
                   ? "Signing in..."
                   : "Sign in"}
 
-                {!loading && (
-                  <span>→</span>
-                )}
-
+                {!loading && <span>→</span>}
               </button>
-
             </form>
-
 
             {message && (
               <div className="auth-message">
@@ -521,246 +344,182 @@ function App() {
               </div>
             )}
 
-
             <div className="auth-divider">
               <span>NEW HERE?</span>
             </div>
 
-
             <button
+              type="button"
               className="outline-button"
-              onClick={() => {
-
-                setPage("register");
-
-                setMessage("");
-
-              }}
+              onClick={() => navigate("register")}
             >
-
               Create an account
-
               <span>→</span>
-
             </button>
-
           </div>
-
         </div>
-
       </div>
-
     );
   }
 
-
-  // =========================
+  // ==============================
   // REGISTER PAGE
-  // =========================
+  // ==============================
 
-  if (page === "register") {
-
+  if (page === "register" && !token) {
     return (
-
       <div className="register-page">
-
         <div className="register-visual">
-
           <div className="logo">
-
-            <span className="logo-mark">
-              ↗
-            </span>
-
+            <span className="logo-mark">↗</span>
             CarbonDown
-
           </div>
 
-
           <div>
-
             <span className="tag">
               START YOUR JOURNEY
             </span>
 
             <h1>
-
               A cleaner
               <br />
-
               way to <span>think.</span>
-
             </h1>
 
             <p>
-
-              Create your personal CarbonDown
-              account and start understanding
-              your everyday environmental impact.
-
+              Create your personal CarbonDown account
+              and start understanding your everyday
+              environmental impact.
             </p>
-
           </div>
-
         </div>
 
-
         <div className="register-form-area">
-
           <button
+            type="button"
             className="back-link"
-            onClick={() => {
-
-              setPage("login");
-
-              setMessage("");
-
-            }}
+            onClick={() => navigate("landing")}
           >
-
-            ← Back to sign in
-
+            ← Back to Home
           </button>
 
-
           <div className="register-form">
-
             <span className="form-label">
               CREATE YOUR SPACE
             </span>
 
-            <h2>
-              Let's make an impact.
-            </h2>
+            <h2>Let's make an impact.</h2>
 
             <p className="form-description">
-              Your personal sustainability
-              workspace starts here.
+              Your personal sustainability workspace
+              starts here.
             </p>
 
-
             <form onSubmit={handleRegister}>
-
-              <label>
+              <label htmlFor="register-name">
                 Full name
               </label>
 
               <input
+                id="register-name"
                 type="text"
                 placeholder="Your full name"
                 value={registerData.name}
                 onChange={(e) =>
                   setRegisterData({
                     ...registerData,
-                    name: e.target.value
+                    name: e.target.value,
                   })
                 }
                 required
               />
 
-
-              <label>
+              <label htmlFor="register-email">
                 Email address
               </label>
 
               <input
+                id="register-email"
                 type="email"
                 placeholder="you@example.com"
                 value={registerData.email}
                 onChange={(e) =>
                   setRegisterData({
                     ...registerData,
-                    email: e.target.value
+                    email: e.target.value,
                   })
                 }
                 required
               />
 
-
-              <label>
+              <label htmlFor="register-password">
                 Password
               </label>
 
               <input
+                id="register-password"
                 type="password"
                 placeholder="At least 6 characters"
                 value={registerData.password}
                 onChange={(e) =>
                   setRegisterData({
                     ...registerData,
-                    password: e.target.value
+                    password: e.target.value,
                   })
                 }
-                minLength="6"
+                minLength={6}
                 required
               />
 
-
-              <label>
+              <label htmlFor="register-confirm">
                 Confirm password
               </label>
 
               <input
+                id="register-confirm"
                 type="password"
                 placeholder="Re-enter your password"
                 value={registerData.confirmPassword}
                 onChange={(e) =>
                   setRegisterData({
                     ...registerData,
-                    confirmPassword: e.target.value
+                    confirmPassword: e.target.value,
                   })
                 }
                 required
               />
 
-
               <div className="two-column">
-
                 <div>
-
-                  <label>
+                  <label htmlFor="register-gender">
                     Gender
                   </label>
 
                   <select
+                    id="register-gender"
                     value={registerData.gender}
                     onChange={(e) =>
                       setRegisterData({
                         ...registerData,
-                        gender: e.target.value
+                        gender: e.target.value,
                       })
                     }
                     required
                   >
-
-                    <option value="">
-                      Select
-                    </option>
-
-                    <option value="Female">
-                      Female
-                    </option>
-
-                    <option value="Male">
-                      Male
-                    </option>
-
-                    <option value="Other">
-                      Other
-                    </option>
-
+                    <option value="">Select</option>
+                    <option value="Female">Female</option>
+                    <option value="Male">Male</option>
+                    <option value="Other">Other</option>
                   </select>
-
                 </div>
 
-
                 <div>
-
-                  <label>
+                  <label htmlFor="register-age">
                     Age
                   </label>
 
                   <input
+                    id="register-age"
                     type="number"
                     min="1"
                     max="120"
@@ -769,35 +528,26 @@ function App() {
                     onChange={(e) =>
                       setRegisterData({
                         ...registerData,
-                        age: e.target.value
+                        age: e.target.value,
                       })
                     }
                     required
                   />
-
                 </div>
-
               </div>
-
 
               <button
                 className="main-button"
                 type="submit"
                 disabled={loading}
               >
-
                 {loading
                   ? "Creating..."
                   : "Create account"}
 
-                {!loading && (
-                  <span>→</span>
-                )}
-
+                {!loading && <span>→</span>}
               </button>
-
             </form>
-
 
             {message && (
               <div className="auth-message">
@@ -805,245 +555,69 @@ function App() {
               </div>
             )}
 
+            <p className="form-description">
+              Already have an account?{" "}
+              <button
+                type="button"
+                className="back-link"
+                onClick={() => navigate("login")}
+              >
+                Sign in →
+              </button>
+            </p>
           </div>
-
         </div>
-
       </div>
-
     );
   }
 
+  // ==============================
+  // PROTECT APPLICATION PAGES
+  // ==============================
 
-  // =========================
-  // APPLICATION PAGES
-  // =========================
+  if (!token) {
+    return (
+      <LandingPage
+        onRegister={() => navigate("register")}
+        onSignIn={() => navigate("login")}
+      />
+    );
+  }
+
+  // ==============================
+  // MAIN APPLICATION
+  // ==============================
 
   return (
-
     <div className="app-layout">
-
       <Sidebar
-
         currentPage={page}
-
-        setCurrentPage={(nextPage) => {
-
-          setPage(nextPage);
-
-          setMessage("");
-
-        }}
-
+        setCurrentPage={navigate}
         onLogout={logout}
-
       />
 
-
       <main className="app-content">
-
-
-        {/* =========================
-            NORMAL USER DASHBOARD
-           ========================= */}
+        {/* DASHBOARD - SUMMARY ONLY */}
 
         {page === "dashboard" && (
-
-          <>
-
-            <Dashboard
-              key={refreshKey}
-              token={token}
-            />
-
-
-            <section className="activity-entry-panel">
-
-              <h2>
-                Log a New Activity
-              </h2>
-
-              <p>
-                Record an activity to calculate
-                its carbon emissions.
-              </p>
-
-
-              {message && (
-                <div className="profile-message">
-                  {message}
-                </div>
-              )}
-
-
-              <form onSubmit={addActivity}>
-
-                <label>
-                  Category
-                </label>
-
-                <select
-                  value={activity.category}
-                  onChange={(e) =>
-                    handleCategoryChange(
-                      e.target.value
-                    )
-                  }
-                >
-
-                  <option value="transport">
-                    Transport
-                  </option>
-
-                  <option value="electricity">
-                    Electricity
-                  </option>
-
-                  <option value="food">
-                    Food
-                  </option>
-
-                  <option value="shopping">
-                    Shopping
-                  </option>
-
-                </select>
-
-
-                <label>
-                  Activity type
-                </label>
-
-                <select
-                  value={activity.activityType}
-                  onChange={(e) =>
-                    setActivity({
-                      ...activity,
-                      activityType:
-                        e.target.value
-                    })
-                  }
-                >
-
-                  {activity.category ===
-                    "transport" && (
-                    <>
-                      <option value="car">
-                        Car
-                      </option>
-
-                      <option value="flight">
-                        Flight
-                      </option>
-
-                      <option value="public_transport">
-                        Public transport
-                      </option>
-                    </>
-                  )}
-
-
-                  {activity.category ===
-                    "electricity" && (
-
-                    <option value="electricity">
-                      Electricity
-                    </option>
-
-                  )}
-
-
-                  {activity.category ===
-                    "food" && (
-                    <>
-                      <option value="vegetarian_meal">
-                        Vegetarian meal
-                      </option>
-
-                      <option value="non_vegetarian_meal">
-                        Non-vegetarian meal
-                      </option>
-                    </>
-                  )}
-
-
-                  {activity.category ===
-                    "shopping" && (
-                    <>
-                      <option value="clothing">
-                        Clothing
-                      </option>
-
-                      <option value="electronics">
-                        Electronics
-                      </option>
-                    </>
-                  )}
-
-                </select>
-
-
-                <label>
-                  Quantity ({activity.unit})
-                </label>
-
-                <input
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  value={activity.quantity}
-                  onChange={(e) =>
-                    setActivity({
-                      ...activity,
-                      quantity:
-                        e.target.value
-                    })
-                  }
-                  required
-                />
-
-
-                <label>
-                  Date
-                </label>
-
-                <input
-                  type="date"
-                  value={activity.logDate}
-                  onChange={(e) =>
-                    setActivity({
-                      ...activity,
-                      logDate:
-                        e.target.value
-                    })
-                  }
-                  required
-                />
-
-
-                <button
-                  type="submit"
-                  className="main-button"
-                >
-                  Calculate & Log Activity →
-                </button>
-
-              </form>
-
-            </section>
-
-          </>
-
+          <Dashboard
+            key={refreshKey}
+            token={token}
+          />
         )}
 
-
-        {/* =========================
-            NORMAL USER PAGES
-           ========================= */}
+        {/* ACTIVITIES - LOGGING + CRUD */}
 
         {page === "activities" && (
-          <Activities token={token} />
+          <Activities
+            token={token}
+            onActivityChanged={() =>
+              setRefreshKey((value) => value + 1)
+            }
+          />
         )}
+
+        {/* USER PAGES */}
 
         {page === "goals" && (
           <Goals token={token} />
@@ -1060,45 +634,29 @@ function App() {
         {page === "profile" && (
           <Profile
             token={token}
-            onBack={() =>
-              setPage("dashboard")
-            }
+            onBack={() => navigate("dashboard")}
           />
         )}
 
-
-        {/* =========================
-            ADMIN PAGES
-           ========================= */}
+        {/* ADMIN PAGES */}
 
         {page === "admin" && (
-          <AdminDashboard
-            setPage={setPage}
-          />
+          <AdminDashboard setPage={navigate} />
         )}
 
         {page === "admin-users" && (
-          <AdminUsers
-            setPage={setPage}
-          />
+          <AdminUsers setPage={navigate} />
         )}
 
         {page === "admin-activities" && (
-          <AdminActivities
-            setPage={setPage}
-          />
+          <AdminActivities setPage={navigate} />
         )}
 
         {page === "admin-factors" && (
-          <AdminEmissionFactors
-            setPage={setPage}
-          />
+          <AdminEmissionFactors setPage={navigate} />
         )}
-
       </main>
-
     </div>
-
   );
 }
 
