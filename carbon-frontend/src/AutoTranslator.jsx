@@ -2,11 +2,19 @@
 import { useEffect } from "react";
 import i18n from "./i18n";
 
-const API_URL = "https://api.mymemory.translated.net/get";
-const CACHE_KEY = "carbonDownTranslationCache";
-const SUPPORTED = ["en", "ta", "hi", "te", "ml", "kn"];
+import {
+  DEFAULT_LANGUAGE,
+  SUPPORTED_LANGUAGES,
+  normalizeLanguage
+} from "./languages";
 
-const originals = new WeakMap();
+const API_URL = "https://api.mymemory.translated.net/get";
+const CACHE_KEY = "carbonDownTranslationCacheV2";
+
+const MAX_CACHE_ENTRIES = 1500;
+const MAX_CONCURRENT_REQUESTS = 2;
+
+const originalNodes = new WeakMap();
 const pendingRequests = new Map();
 
 let cache = {};
@@ -19,16 +27,20 @@ try {
 
 function saveCache() {
   try {
-    const entries = Object.entries(cache).slice(-1500);
-    cache = Object.fromEntries(entries);
+    cache = Object.fromEntries(
+      Object.entries(cache).slice(-MAX_CACHE_ENTRIES)
+    );
 
-    localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+    localStorage.setItem(
+      CACHE_KEY,
+      JSON.stringify(cache)
+    );
   } catch {
-    // Browser storage may be unavailable or full.
+    // Storage may be unavailable.
   }
 }
 
-function canTranslate(text) {
+function shouldTranslate(text) {
   const value = text.trim();
 
   if (value.length < 2) return false;
@@ -39,6 +51,10 @@ function canTranslate(text) {
   }
 
   if (/^(https?:\/\/|www\.|[\w.+-]+@)/i.test(value)) {
+    return false;
+  }
+
+  if (/^[\d\s.,:%₹$+\-()/]+$/.test(value)) {
     return false;
   }
 
@@ -67,6 +83,37 @@ function isExcluded(element) {
   );
 }
 
+function isExistingTranslation(text, language) {
+  if (language === DEFAULT_LANGUAGE) return false;
+
+  const resources = i18n.getResourceBundle(
+    language,
+    "translation"
+  );
+
+  if (!resources) return false;
+
+  function containsValue(object) {
+    if (!object || typeof object !== "object") {
+      return false;
+    }
+
+    return Object.values(object).some((value) => {
+      if (typeof value === "string") {
+        return value.trim() === text.trim();
+      }
+
+      if (typeof value === "object") {
+        return containsValue(value);
+      }
+
+      return false;
+    });
+  }
+
+  return containsValue(resources);
+}
+
 async function translateText(text, language) {
   const key = JSON.stringify([language, text]);
 
@@ -84,10 +131,12 @@ async function translateText(text, language) {
       langpair: `en|${language}`
     });
 
-    const response = await fetch(`${API_URL}?${params}`);
+    const response = await fetch(
+      `${API_URL}?${params.toString()}`
+    );
 
     if (!response.ok) {
-      throw new Error(`Translation error: ${response.status}`);
+      throw new Error(`HTTP ${response.status}`);
     }
 
     const data = await response.json();
@@ -124,21 +173,22 @@ export default function AutoTranslator({ children }) {
 
     if (!root) return;
 
-    let language = i18n.language.split("-")[0];
+    let language = normalizeLanguage(i18n.language);
     let generation = 0;
+    let stopped = false;
     let scheduled = false;
     let processing = false;
     let rerun = false;
-    let stopped = false;
 
-    const knownNodes = new Set();
-    const observedOptions = {
+    const trackedNodes = new Set();
+
+    const observerOptions = {
       subtree: true,
       childList: true,
       characterData: true
     };
 
-    function getNodes() {
+    function collectNodes() {
       const walker = document.createTreeWalker(
         root,
         NodeFilter.SHOW_TEXT
@@ -151,32 +201,32 @@ export default function AutoTranslator({ children }) {
         if (!node.parentElement) continue;
         if (isExcluded(node.parentElement)) continue;
 
-        const value = node.nodeValue || "";
+        const current = node.nodeValue || "";
 
-        if (!originals.has(node)) {
-          originals.set(node, {
-            source: value,
+        if (!originalNodes.has(node)) {
+          originalNodes.set(node, {
+            source: current,
             translated: null
           });
         }
 
-        knownNodes.add(node);
+        trackedNodes.add(node);
         nodes.push(node);
       }
 
       return nodes;
     }
 
-    function restoreEnglish() {
+    function restoreOriginals() {
       observer.disconnect();
 
-      knownNodes.forEach((node) => {
+      trackedNodes.forEach((node) => {
         if (!node.isConnected) {
-          knownNodes.delete(node);
+          trackedNodes.delete(node);
           return;
         }
 
-        const record = originals.get(node);
+        const record = originalNodes.get(node);
         if (!record) return;
 
         if (
@@ -189,7 +239,7 @@ export default function AutoTranslator({ children }) {
         record.translated = null;
       });
 
-      observer.observe(root, observedOptions);
+      observer.observe(root, observerOptions);
     }
 
     async function processPage() {
@@ -204,17 +254,20 @@ export default function AutoTranslator({ children }) {
       const currentGeneration = generation;
 
       try {
-        const nodes = getNodes();
+        const nodes = collectNodes();
 
-        if (language === "en" || !SUPPORTED.includes(language)) {
-          restoreEnglish();
+        if (
+          language === DEFAULT_LANGUAGE ||
+          !SUPPORTED_LANGUAGES.includes(language)
+        ) {
+          restoreOriginals();
           return;
         }
 
         const groups = new Map();
 
         nodes.forEach((node) => {
-          const record = originals.get(node);
+          const record = originalNodes.get(node);
           if (!record) return;
 
           const current = node.nodeValue || "";
@@ -223,14 +276,18 @@ export default function AutoTranslator({ children }) {
             record.translated !== null &&
             current !== record.translated
           ) {
-            // React has rendered new source text.
             record.source = current;
             record.translated = null;
           }
 
           const source = record.source.trim();
 
-          if (!canTranslate(source)) return;
+          if (!shouldTranslate(source)) return;
+
+          // Avoid retranslating strings supplied by i18next.
+          if (isExistingTranslation(source, language)) {
+            return;
+          }
 
           if (!groups.has(source)) {
             groups.set(source, []);
@@ -244,7 +301,10 @@ export default function AutoTranslator({ children }) {
 
         async function worker() {
           while (cursor < entries.length) {
-            if (stopped || currentGeneration !== generation) {
+            if (
+              stopped ||
+              currentGeneration !== generation
+            ) {
               return;
             }
 
@@ -256,7 +316,10 @@ export default function AutoTranslator({ children }) {
                 language
               );
 
-              if (stopped || currentGeneration !== generation) {
+              if (
+                stopped ||
+                currentGeneration !== generation
+              ) {
                 return;
               }
 
@@ -265,10 +328,12 @@ export default function AutoTranslator({ children }) {
               targetNodes.forEach((node) => {
                 if (!node.isConnected) return;
 
-                const record = originals.get(node);
+                const record = originalNodes.get(node);
                 if (!record) return;
 
-                if (record.source.trim() !== source) return;
+                if (record.source.trim() !== source) {
+                  return;
+                }
 
                 const leading =
                   record.source.match(/^\s*/)?.[0] || "";
@@ -276,7 +341,8 @@ export default function AutoTranslator({ children }) {
                 const trailing =
                   record.source.match(/\s*$/)?.[0] || "";
 
-                const result = leading + translated + trailing;
+                const result =
+                  leading + translated + trailing;
 
                 if (node.nodeValue !== result) {
                   node.nodeValue = result;
@@ -285,7 +351,7 @@ export default function AutoTranslator({ children }) {
                 record.translated = result;
               });
 
-              observer.observe(root, observedOptions);
+              observer.observe(root, observerOptions);
             } catch (error) {
               console.warn(
                 "AutoTranslator:",
@@ -295,10 +361,14 @@ export default function AutoTranslator({ children }) {
           }
         }
 
-        // Two simultaneous requests maximum.
         await Promise.all(
           Array.from(
-            { length: Math.min(2, entries.length) },
+            {
+              length: Math.min(
+                MAX_CONCURRENT_REQUESTS,
+                entries.length
+              )
+            },
             () => worker()
           )
         );
@@ -330,17 +400,20 @@ export default function AutoTranslator({ children }) {
       schedule();
     });
 
-    function changeLanguage(nextLanguage) {
-      language = nextLanguage.split("-")[0];
+    function handleLanguageChange(nextLanguage) {
+      language = normalizeLanguage(nextLanguage);
       generation++;
 
-      restoreEnglish();
+      restoreOriginals();
       schedule();
     }
 
-    observer.observe(root, observedOptions);
+    observer.observe(root, observerOptions);
 
-    i18n.on("languageChanged", changeLanguage);
+    i18n.on(
+      "languageChanged",
+      handleLanguageChange
+    );
 
     schedule();
 
@@ -349,7 +422,11 @@ export default function AutoTranslator({ children }) {
       generation++;
 
       observer.disconnect();
-      i18n.off("languageChanged", changeLanguage);
+
+      i18n.off(
+        "languageChanged",
+        handleLanguageChange
+      );
     };
   }, []);
 

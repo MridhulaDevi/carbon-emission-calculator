@@ -2,6 +2,12 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 
+import {
+  DEFAULT_LANGUAGE,
+  SUPPORTED_LANGUAGES,
+  normalizeLanguage
+} from "./languages";
+
 const translations = {
   en: {
     dashboard: "Dashboard",
@@ -280,29 +286,46 @@ const translations = {
   }
 };
 
+// Automatically register every language from languages.js.
+// New languages use English for missing translation keys,
+// while AutoTranslator handles eligible English UI text.
+
 const resources = Object.fromEntries(
-  Object.entries(translations).map(([language, translation]) => [
+  SUPPORTED_LANGUAGES.map((language) => [
     language,
-    { translation }
+    {
+      translation: translations[language] || {}
+    }
   ])
 );
 
-const savedLanguage = localStorage.getItem("carbonLanguage");
+const savedLanguage = normalizeLanguage(
+  localStorage.getItem("carbonLanguage")
+);
 
 i18n.use(initReactI18next).init({
   resources,
-  lng: translations[savedLanguage] ? savedLanguage : "en",
-  fallbackLng: "en",
+  lng: savedLanguage,
+  fallbackLng: DEFAULT_LANGUAGE,
+  supportedLngs: SUPPORTED_LANGUAGES,
+  load: "languageOnly",
   interpolation: {
     escapeValue: false
+  },
+  react: {
+    useSuspense: false
   }
 });
 
 i18n.on("languageChanged", (language) => {
-  localStorage.setItem("carbonLanguage", language);
-  document.documentElement.lang = language;
+  const normalized = normalizeLanguage(language);
+
+  localStorage.setItem("carbonLanguage", normalized);
+  document.documentElement.lang = normalized;
 });
 
-document.documentElement.lang = i18n.language;
+document.documentElement.lang = normalizeLanguage(
+  i18n.language
+);
 
 export default i18n;

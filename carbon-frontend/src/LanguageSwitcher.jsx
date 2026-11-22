@@ -1,87 +1,108 @@
 
-import { useState, useRef, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import {
+  LANGUAGES,
+  getLanguage,
+  normalizeLanguage
+} from "./languages";
+
 import "./LanguageSwitcher.css";
 
-const languages = [
-  { code: "en", name: "English", short: "EN" },
-  { code: "ta", name: "தமிழ்", short: "TA" },
-  { code: "hi", name: "हिन्दी", short: "HI" },
-  { code: "te", name: "తెలుగు", short: "TE" },
-  { code: "ml", name: "മലയാളം", short: "ML" },
-  { code: "kn", name: "ಕನ್ನಡ", short: "KN" }
-];
+export default function LanguageSwitcher() {
+  const { i18n } = useTranslation();
 
-function LanguageSwitcher() {
-  const { t, i18n } = useTranslation();
   const [open, setOpen] = useState(false);
   const containerRef = useRef(null);
 
-  const selected =
-    languages.find((lang) => lang.code === i18n.language) ||
-    languages[0];
+  const selected = getLanguage(i18n.language);
 
   useEffect(() => {
-    const closeOnOutsideClick = (event) => {
-      if (!containerRef.current?.contains(event.target)) {
+    function handleOutsideClick(event) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target)
+      ) {
         setOpen(false);
       }
-    };
+    }
 
-    document.addEventListener("mousedown", closeOnOutsideClick);
+    function handleEscape(event) {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    document.addEventListener("keydown", handleEscape);
 
     return () => {
-      document.removeEventListener("mousedown", closeOnOutsideClick);
+      document.removeEventListener("mousedown", handleOutsideClick);
+      document.removeEventListener("keydown", handleEscape);
     };
   }, []);
 
-  const changeLanguage = (code) => {
-    i18n.changeLanguage(code);
+  function changeLanguage(code) {
+    const language = normalizeLanguage(code);
+
+    i18n.changeLanguage(language);
     setOpen(false);
-  };
+  }
 
   return (
-    <div className="carbon-language" ref={containerRef}>
+    <div
+      className="carbon-language"
+      ref={containerRef}
+      data-no-translate
+    >
       <button
         type="button"
         className="carbon-language-button"
-        onClick={() => setOpen(!open)}
+        onClick={() => setOpen((previous) => !previous)}
+        aria-label="Choose language"
         aria-expanded={open}
-        aria-label={t("language")}
+        aria-haspopup="true"
       >
         <span className="language-globe">🌐</span>
+
         <span>{selected.short}</span>
-        <span className="language-arrow">⌄</span>
+
+        <span className="language-arrow">
+          {open ? "⌃" : "⌄"}
+        </span>
       </button>
 
       {open && (
         <div className="carbon-language-dropdown">
           <div className="language-dropdown-heading">
-            {t("language")}
+            SELECT LANGUAGE
           </div>
 
-          {languages.map((language) => (
-            <button
-              key={language.code}
-              type="button"
-              className={`language-option ${
-                selected.code === language.code ? "selected" : ""
-              }`}
-              onClick={() => changeLanguage(language.code)}
-            >
-              <span className="language-radio">
-                {selected.code === language.code ? "●" : "○"}
-              </span>
+          {LANGUAGES.map((language) => {
+            const active = selected.code === language.code;
 
-              <span>{language.name}</span>
+            return (
+              <button
+                type="button"
+                key={language.code}
+                className={
+                  `language-option ${active ? "selected" : ""}`
+                }
+                onClick={() => changeLanguage(language.code)}
+                aria-pressed={active}
+              >
+                <span className="language-radio">
+                  {active ? "◉" : "○"}
+                </span>
 
-              <small>{language.short}</small>
-            </button>
-          ))}
+                <span>{language.native}</span>
+
+                <small>{language.short}</small>
+              </button>
+            );
+          })}
         </div>
       )}
     </div>
   );
 }
-
-export default LanguageSwitcher;
