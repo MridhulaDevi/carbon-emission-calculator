@@ -1,6 +1,10 @@
+
+import { useTranslation } from "react-i18next";
 import "./Sidebar.css";
 
 function Sidebar({ currentPage, setCurrentPage, onLogout }) {
+
+  const { t } = useTranslation();
 
   // ==========================================
   // GET ROLE FROM JWT
@@ -28,16 +32,17 @@ function Sidebar({ currentPage, setCurrentPage, onLogout }) {
         )
       );
 
-      let role = payload.role || payload.authorities || "USER";
+      let role =
+        payload.role ||
+        payload.authorities ||
+        "USER";
 
-      // If authorities is an array
       if (Array.isArray(role)) {
         role = role[0];
       }
 
       role = String(role).toUpperCase();
 
-      // Handle ROLE_ADMIN or ROLE_USER
       if (role.startsWith("ROLE_")) {
         role = role.substring(5);
       }
@@ -45,16 +50,17 @@ function Sidebar({ currentPage, setCurrentPage, onLogout }) {
       return role;
 
     } catch (error) {
-      console.error("Unable to read JWT role:", error);
+      console.error(
+        "Unable to read JWT role:",
+        error
+      );
+
       return "USER";
     }
   };
 
-
   const userRole = getUserRole();
-
   const isAdmin = userRole === "ADMIN";
-
 
   // ==========================================
   // NORMAL USER MENU
@@ -64,35 +70,34 @@ function Sidebar({ currentPage, setCurrentPage, onLogout }) {
     {
       id: "dashboard",
       icon: "⌂",
-      label: "Dashboard"
+      label: t("dashboard")
     },
     {
       id: "activities",
       icon: "◷",
-      label: "Activities"
+      label: t("activities")
     },
     {
       id: "goals",
       icon: "◎",
-      label: "My Goals"
+      label: t("goals")
     },
     {
       id: "recommendations",
       icon: "✳",
-      label: "Recommendations"
+      label: t("recommendations")
     },
     {
       id: "badges",
       icon: "♕",
-      label: "Badges"
+      label: t("badges")
     },
     {
       id: "profile",
       icon: "♙",
-      label: "My Profile"
+      label: t("profile")
     }
   ];
-
 
   // ==========================================
   // ADMIN MENU
@@ -102,25 +107,29 @@ function Sidebar({ currentPage, setCurrentPage, onLogout }) {
     {
       id: "admin",
       icon: "▣",
-      label: "Admin Dashboard"
+      label: t("adminDashboard")
     },
     {
       id: "admin-users",
       icon: "♙",
-      label: "Manage Users"
+      label: t("manageUsers")
     },
     {
       id: "admin-activities",
       icon: "◷",
-      label: "Manage Activities"
+      label: t("manageActivities")
+    },
+    {
+      id: "adminBadges",
+      icon: "♧",
+      label: t("badgeManagement")
     },
     {
       id: "admin-factors",
       icon: "⚙",
-      label: "Emission Factors"
+      label: t("emissionFactors")
     }
   ];
-
 
   return (
     <aside className="app-sidebar">
@@ -137,18 +146,20 @@ function Sidebar({ currentPage, setCurrentPage, onLogout }) {
 
         <div>
           <h2>CarbonDown</h2>
-          <small>LIVE GREENER</small>
+
+          <small>
+            {t("liveGreener")}
+          </small>
         </div>
 
       </div>
-
 
       {/* =====================================
           NORMAL USER MENU
       ===================================== */}
 
       <p className="sidebar-label">
-        WORKSPACE
+        {t("workspace")}
       </p>
 
       <nav className="sidebar-menu">
@@ -157,12 +168,15 @@ function Sidebar({ currentPage, setCurrentPage, onLogout }) {
 
           <button
             key={item.id}
+            type="button"
             className={
               currentPage === item.id
                 ? "sidebar-item active"
                 : "sidebar-item"
             }
-            onClick={() => setCurrentPage(item.id)}
+            onClick={() =>
+              setCurrentPage(item.id)
+            }
           >
 
             <span>
@@ -177,7 +191,6 @@ function Sidebar({ currentPage, setCurrentPage, onLogout }) {
 
       </nav>
 
-
       {/* =====================================
           ADMIN MENU
       ===================================== */}
@@ -185,7 +198,7 @@ function Sidebar({ currentPage, setCurrentPage, onLogout }) {
       {isAdmin && (
         <>
           <p className="sidebar-label admin-section-label">
-            ADMIN PANEL
+            {t("adminPanel")}
           </p>
 
           <nav className="sidebar-menu">
@@ -194,12 +207,15 @@ function Sidebar({ currentPage, setCurrentPage, onLogout }) {
 
               <button
                 key={item.id}
+                type="button"
                 className={
                   currentPage === item.id
                     ? "sidebar-item active"
                     : "sidebar-item"
                 }
-                onClick={() => setCurrentPage(item.id)}
+                onClick={() =>
+                  setCurrentPage(item.id)
+                }
               >
 
                 <span>
@@ -216,7 +232,6 @@ function Sidebar({ currentPage, setCurrentPage, onLogout }) {
         </>
       )}
 
-
       {/* =====================================
           BOTTOM
       ===================================== */}
@@ -228,17 +243,17 @@ function Sidebar({ currentPage, setCurrentPage, onLogout }) {
           <span>🌍</span>
 
           <p>
-            Small steps today.
-            A greener tomorrow.
+            {t("tip")}
           </p>
 
         </div>
 
         <button
+          type="button"
           className="logout-btn"
           onClick={onLogout}
         >
-          ↪ Log Out
+          ↪ {t("logout")}
         </button>
 
       </div>

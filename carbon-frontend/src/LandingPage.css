@@ -1047,3 +1047,187 @@
     transform: none;
   }
 }
+
+/* =========================================
+   LANDING PAGE - MULTILINGUAL NAVBAR FIX
+========================================= */
+
+.lp-navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  width: 100%;
+  padding: 0 5%;
+}
+
+.lp-navbar > .lp-logo {
+  flex-shrink: 0;
+}
+
+.lp-navbar > .lp-navlinks {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 26px;
+  flex: 1;
+  min-width: 0;
+}
+
+.lp-auth-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.lp-language-slot {
+  display: flex;
+  align-items: center;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.lp-language-slot .carbon-language {
+  position: relative;
+  z-index: 100;
+}
+
+.lp-language-slot .carbon-language-button {
+  min-width: 80px;
+  height: 43px;
+  padding: 9px 12px;
+}
+
+.lp-register-btn,
+.lp-signin-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  white-space: nowrap;
+  min-height: 43px;
+  padding: 10px 17px;
+  border-radius: 30px;
+}
+
+.lp-register-btn {
+  color: #d5f477;
+  border: 1px solid rgba(213, 244, 119, 0.5);
+}
+
+.lp-register-btn:hover {
+  background: #d5f477;
+  color: #0b241d;
+}
+
+.lp-signin-btn {
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+/* Prevent old App.css positioning rules
+   from affecting the navbar dropdown */
+
+.lp-navbar .public-language-switcher {
+  position: static;
+}
+
+/* Tablet */
+
+@media (max-width: 1200px) {
+  .lp-navbar {
+    gap: 12px;
+    padding: 0 4%;
+  }
+
+  .lp-navbar > .lp-navlinks {
+    gap: 16px;
+  }
+
+  .lp-new-label {
+    display: none;
+  }
+}
+
+/* Mobile navigation */
+
+@media (max-width: 960px) {
+  .lp-navbar {
+    height: 76px;
+  }
+
+  .lp-navbar > .lp-navlinks {
+    display: none;
+    position: absolute;
+    top: 76px;
+    left: 0;
+    right: 0;
+    padding: 22px 6%;
+    background: #0b241d;
+    flex-direction: column;
+    align-items: flex-start;
+    z-index: 90;
+  }
+
+  .lp-navbar > .lp-navlinks.open {
+    display: flex;
+  }
+
+  .lp-menu-btn {
+    display: block;
+    flex-shrink: 0;
+  }
+
+  .lp-auth-actions {
+    margin-left: auto;
+  }
+}
+
+@media (max-width: 600px) {
+  .lp-navbar {
+    gap: 7px;
+    padding: 0 3%;
+  }
+
+  .lp-logo {
+    font-size: 18px;
+  }
+
+  .lp-logo-symbol {
+    font-size: 19px;
+    margin-right: 5px;
+  }
+
+  .lp-auth-actions {
+    gap: 5px;
+  }
+
+  .lp-language-slot .carbon-language-button {
+    min-width: 58px;
+    height: 36px;
+    padding: 6px;
+    gap: 4px;
+    font-size: 11px;
+  }
+
+  .lp-register-btn,
+  .lp-signin-btn {
+    font-size: 10px;
+    padding: 7px 8px;
+    min-height: 36px;
+  }
+}
+
+@media (max-width: 390px) {
+  .lp-logo {
+    font-size: 15px;
+  }
+
+  .lp-register-btn,
+  .lp-signin-btn {
+    padding: 6px;
+    font-size: 9px;
+  }
+}

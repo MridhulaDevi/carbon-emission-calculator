@@ -487,3 +487,74 @@ body {
     flex-direction: column;
   }
 }
+.app-language-bar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 14px 4% 0;
+  position: relative;
+  z-index: 50;
+}
+
+.auth-language-bar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 15px;
+  position: relative;
+  z-index: 50;
+}
+
+
+/* ==========================================
+   CARBONDOWN MULTILINGUAL SUPPORT
+========================================== */
+
+/* Landing page language selector */
+
+.public-page-wrapper {
+  position: relative;
+  min-height: 100vh;
+}
+
+.public-language-switcher {
+  position: absolute;
+  top: 20px;
+  right: 190px;
+  z-index: 1000;
+}
+
+/* Login and registration language selector */
+
+.auth-language-bar {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+  margin-bottom: 12px;
+  position: relative;
+  z-index: 100;
+}
+
+/* Dashboard and admin pages */
+
+.app-language-bar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 14px 4% 0;
+  position: relative;
+  z-index: 100;
+  background: transparent;
+}
+
+/* Responsive layout */
+
+@media (max-width: 768px) {
+  .public-language-switcher {
+    top: 12px;
+    right: 12px;
+  }
+
+  .app-language-bar {
+    padding: 12px 5% 0;
+  }
+}

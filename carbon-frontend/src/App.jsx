@@ -1,14 +1,20 @@
 
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+
 import "./App.css";
+import "./i18n";
 
 import LandingPage from "./LandingPage";
 import Sidebar from "./Sidebar";
+import LanguageSwitcher from "./LanguageSwitcher";
+
 import Dashboard from "./Dashboard";
 import Activities from "./Activities";
 import Goals from "./Goals";
 import Recommendations from "./Recommendations";
 import Badges from "./Badges";
+import AdminBadges from "./AdminBadges";
 import Profile from "./Profile";
 
 import AdminDashboard from "./AdminDashboard";
@@ -33,6 +39,8 @@ const emptyRegister = {
 };
 
 function App() {
+  const { t } = useTranslation();
+
   const [token, setToken] = useState(
     localStorage.getItem("token") || ""
   );
@@ -49,9 +57,9 @@ function App() {
   const [message, setMessage] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // ==============================
+  // ==========================================
   // PAGE NAVIGATION
-  // ==============================
+  // ==========================================
 
   const navigate = (nextPage) => {
     setPage(nextPage);
@@ -63,9 +71,9 @@ function App() {
     window.scrollTo(0, 0);
   }, [page]);
 
-  // ==============================
+  // ==========================================
   // LOGIN
-  // ==============================
+  // ==========================================
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -101,16 +109,19 @@ function App() {
       setToken(receivedToken);
       setLoginData(emptyLogin);
       navigate("dashboard");
+
     } catch (error) {
+      console.error("Login error:", error);
       setMessage("Cannot connect to server.");
+
     } finally {
       setLoading(false);
     }
   };
 
-  // ==============================
+  // ==========================================
   // REGISTER
-  // ==============================
+  // ==========================================
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -159,19 +170,23 @@ function App() {
 
       setRegisterData(emptyRegister);
       navigate("login");
+
       setMessage(
         "Registration successful. Please sign in."
       );
+
     } catch (error) {
+      console.error("Registration error:", error);
       setMessage("Cannot connect to server.");
+
     } finally {
       setLoading(false);
     }
   };
 
-  // ==============================
+  // ==========================================
   // LOGOUT
-  // ==============================
+  // ==========================================
 
   const logout = () => {
     localStorage.removeItem("token");
@@ -180,29 +195,40 @@ function App() {
     setToken("");
     setLoginData(emptyLogin);
     setMessage("");
+
     navigate("landing");
   };
 
-  // ==============================
+  // ==========================================
   // LANDING PAGE
-  // ==============================
+  // ==========================================
 
   if (page === "landing" && !token) {
     return (
-      <LandingPage
-        onRegister={() => navigate("register")}
-        onSignIn={() => navigate("login")}
-      />
+      <div className="public-page-wrapper">
+        <div className="public-language-switcher">
+          
+        </div>
+
+        <LandingPage
+          onRegister={() => navigate("register")}
+          onSignIn={() => navigate("login")}
+          languageSelector={<LanguageSwitcher />}
+        />
+      </div>
     );
   }
 
-  // ==============================
+  // ==========================================
   // LOGIN PAGE
-  // ==============================
+  // ==========================================
 
   if (page === "login" && !token) {
     return (
       <div className="auth-page">
+
+        {/* LEFT VISUAL */}
+
         <div className="auth-visual">
           <div className="logo">
             <span className="logo-mark">↗</span>
@@ -250,14 +276,22 @@ function App() {
           </div>
         </div>
 
+        {/* RIGHT LOGIN FORM */}
+
         <div className="auth-card-area">
+
+          <div className="auth-language-bar">
+            <LanguageSwitcher />
+          </div>
+
           <div className="auth-card">
+
             <button
               type="button"
               className="back-link"
               onClick={() => navigate("landing")}
             >
-              ← Back to Home
+              ← {t("backHome")}
             </button>
 
             <div className="mobile-logo">
@@ -266,18 +300,19 @@ function App() {
             </div>
 
             <span className="form-label">
-              WELCOME BACK
+              {t("welcomeBack")}
             </span>
 
-            <h2>Sign in to your journey.</h2>
+            <h2>{t("loginTitle")}</h2>
 
             <p className="form-description">
-              Continue tracking the choices that matter.
+              {t("loginDescription")}
             </p>
 
             <form onSubmit={handleLogin}>
+
               <label htmlFor="login-email">
-                Email address
+                {t("email")}
               </label>
 
               <input
@@ -295,8 +330,9 @@ function App() {
               />
 
               <div className="password-label">
+
                 <label htmlFor="login-password">
-                  Password
+                  {t("password")}
                 </label>
 
                 <button
@@ -305,8 +341,9 @@ function App() {
                     setShowPassword(!showPassword)
                   }
                 >
-                  {showPassword ? "Hide" : "Show"}
+                  {showPassword ? t("hide") : t("show")}
                 </button>
+
               </div>
 
               <input
@@ -314,7 +351,7 @@ function App() {
                 type={
                   showPassword ? "text" : "password"
                 }
-                placeholder="Enter your password"
+                placeholder={t("password")}
                 value={loginData.password}
                 onChange={(e) =>
                   setLoginData({
@@ -331,11 +368,12 @@ function App() {
                 disabled={loading}
               >
                 {loading
-                  ? "Signing in..."
-                  : "Sign in"}
+                  ? t("signingIn")
+                  : t("signIn")}
 
                 {!loading && <span>→</span>}
               </button>
+
             </form>
 
             {message && (
@@ -345,7 +383,7 @@ function App() {
             )}
 
             <div className="auth-divider">
-              <span>NEW HERE?</span>
+              <span>{t("newHere")}</span>
             </div>
 
             <button
@@ -353,23 +391,28 @@ function App() {
               className="outline-button"
               onClick={() => navigate("register")}
             >
-              Create an account
+              {t("register")}
               <span>→</span>
             </button>
+
           </div>
         </div>
       </div>
     );
   }
 
-  // ==============================
+  // ==========================================
   // REGISTER PAGE
-  // ==============================
+  // ==========================================
 
   if (page === "register" && !token) {
     return (
       <div className="register-page">
+
+        {/* LEFT VISUAL */}
+
         <div className="register-visual">
+
           <div className="logo">
             <span className="logo-mark">↗</span>
             CarbonDown
@@ -377,7 +420,7 @@ function App() {
 
           <div>
             <span className="tag">
-              START YOUR JOURNEY
+              {t("startJourney")}
             </span>
 
             <h1>
@@ -394,36 +437,44 @@ function App() {
           </div>
         </div>
 
+        {/* RIGHT REGISTER FORM */}
+
         <div className="register-form-area">
+
+          <div className="auth-language-bar">
+            <LanguageSwitcher />
+          </div>
+
           <button
             type="button"
             className="back-link"
             onClick={() => navigate("landing")}
           >
-            ← Back to Home
+            ← {t("backHome")}
           </button>
 
           <div className="register-form">
+
             <span className="form-label">
-              CREATE YOUR SPACE
+              {t("createSpace")}
             </span>
 
-            <h2>Let's make an impact.</h2>
+            <h2>{t("registerTitle")}</h2>
 
             <p className="form-description">
-              Your personal sustainability workspace
-              starts here.
+              {t("registerDescription")}
             </p>
 
             <form onSubmit={handleRegister}>
+
               <label htmlFor="register-name">
-                Full name
+                {t("fullName")}
               </label>
 
               <input
                 id="register-name"
                 type="text"
-                placeholder="Your full name"
+                placeholder={t("fullName")}
                 value={registerData.name}
                 onChange={(e) =>
                   setRegisterData({
@@ -435,7 +486,7 @@ function App() {
               />
 
               <label htmlFor="register-email">
-                Email address
+                {t("email")}
               </label>
 
               <input
@@ -453,7 +504,7 @@ function App() {
               />
 
               <label htmlFor="register-password">
-                Password
+                {t("password")}
               </label>
 
               <input
@@ -472,13 +523,13 @@ function App() {
               />
 
               <label htmlFor="register-confirm">
-                Confirm password
+                {t("confirmPassword")}
               </label>
 
               <input
                 id="register-confirm"
                 type="password"
-                placeholder="Re-enter your password"
+                placeholder={t("confirmPassword")}
                 value={registerData.confirmPassword}
                 onChange={(e) =>
                   setRegisterData({
@@ -490,9 +541,10 @@ function App() {
               />
 
               <div className="two-column">
+
                 <div>
                   <label htmlFor="register-gender">
-                    Gender
+                    {t("gender")}
                   </label>
 
                   <select
@@ -506,16 +558,27 @@ function App() {
                     }
                     required
                   >
-                    <option value="">Select</option>
-                    <option value="Female">Female</option>
-                    <option value="Male">Male</option>
-                    <option value="Other">Other</option>
+                    <option value="">
+                      {t("select")}
+                    </option>
+
+                    <option value="Female">
+                      {t("female")}
+                    </option>
+
+                    <option value="Male">
+                      {t("male")}
+                    </option>
+
+                    <option value="Other">
+                      {t("other")}
+                    </option>
                   </select>
                 </div>
 
                 <div>
                   <label htmlFor="register-age">
-                    Age
+                    {t("age")}
                   </label>
 
                   <input
@@ -523,7 +586,7 @@ function App() {
                     type="number"
                     min="1"
                     max="120"
-                    placeholder="Age"
+                    placeholder={t("age")}
                     value={registerData.age}
                     onChange={(e) =>
                       setRegisterData({
@@ -534,6 +597,7 @@ function App() {
                     required
                   />
                 </div>
+
               </div>
 
               <button
@@ -542,11 +606,12 @@ function App() {
                 disabled={loading}
               >
                 {loading
-                  ? "Creating..."
-                  : "Create account"}
+                  ? t("creating")
+                  : t("register")}
 
                 {!loading && <span>→</span>}
               </button>
+
             </form>
 
             {message && (
@@ -556,40 +621,51 @@ function App() {
             )}
 
             <p className="form-description">
-              Already have an account?{" "}
+              {t("alreadyAccount")}{" "}
+
               <button
                 type="button"
                 className="back-link"
                 onClick={() => navigate("login")}
               >
-                Sign in →
+                {t("signIn")} →
               </button>
             </p>
+
           </div>
         </div>
       </div>
     );
   }
 
-  // ==============================
+  // ==========================================
   // PROTECT APPLICATION PAGES
-  // ==============================
+  // ==========================================
 
   if (!token) {
     return (
-      <LandingPage
-        onRegister={() => navigate("register")}
-        onSignIn={() => navigate("login")}
-      />
+      <div className="public-page-wrapper">
+
+        <div className="public-language-switcher">
+          <LanguageSwitcher />
+        </div>
+
+        <LandingPage
+          onRegister={() => navigate("register")}
+          onSignIn={() => navigate("login")}
+        />
+
+      </div>
     );
   }
 
-  // ==============================
+  // ==========================================
   // MAIN APPLICATION
-  // ==============================
+  // ==========================================
 
   return (
     <div className="app-layout">
+
       <Sidebar
         currentPage={page}
         setCurrentPage={navigate}
@@ -597,7 +673,14 @@ function App() {
       />
 
       <main className="app-content">
-        {/* DASHBOARD - SUMMARY ONLY */}
+
+        {/* GLOBAL LANGUAGE SELECTOR */}
+
+        <div className="app-language-bar">
+          <LanguageSwitcher />
+        </div>
+
+        {/* DASHBOARD */}
 
         {page === "dashboard" && (
           <Dashboard
@@ -606,7 +689,7 @@ function App() {
           />
         )}
 
-        {/* ACTIVITIES - LOGGING + CRUD */}
+        {/* ACTIVITIES */}
 
         {page === "activities" && (
           <Activities
@@ -652,9 +735,14 @@ function App() {
           <AdminActivities setPage={navigate} />
         )}
 
+        {page === "adminBadges" && (
+          <AdminBadges setPage={navigate} />
+        )}
+
         {page === "admin-factors" && (
           <AdminEmissionFactors setPage={navigate} />
         )}
+
       </main>
     </div>
   );

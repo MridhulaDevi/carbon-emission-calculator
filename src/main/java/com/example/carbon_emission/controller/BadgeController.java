@@ -1,13 +1,12 @@
 package com.example.carbon_emission.controller;
 
-import com.example.carbon_emission.entity.Badge;
 import com.example.carbon_emission.service.BadgeService;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/badges")
@@ -21,13 +20,11 @@ public class BadgeController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Badge>> getBadges(
+    public ResponseEntity<List<Map<String, Object>>> getBadges(
             Authentication authentication) {
 
-        String email = authentication.getName();
-
         return ResponseEntity.ok(
-                badgeService.getBadges(email)
+                badgeService.getBadges(authentication.getName())
         );
     }
 }

@@ -17,14 +17,16 @@ public class Badge {
 
     private String icon;
 
-    public Badge() {
-    }
+    @Column(name = "criteria_type", nullable = false)
+    private String criteriaType;
 
-    public Badge(String name, String description, String icon) {
-        this.name = name;
-        this.description = description;
-        this.icon = icon;
-    }
+    @Column(name = "target_value", nullable = false)
+    private Double targetValue;
+
+    @Column(nullable = false)
+    private Boolean active = true;
+
+    public Badge() {}
 
     public Long getId() {
         return id;
@@ -52,5 +54,29 @@ public class Badge {
 
     public void setIcon(String icon) {
         this.icon = icon;
+    }
+
+    public String getCriteriaType() {
+        return criteriaType;
+    }
+
+    public void setCriteriaType(String criteriaType) {
+        this.criteriaType = criteriaType;
+    }
+
+    public Double getTargetValue() {
+        return targetValue;
+    }
+
+    public void setTargetValue(Double targetValue) {
+        this.targetValue = targetValue;
+    }
+
+    public Boolean getActive() {
+        return active;
+    }
+
+    public void setActive(Boolean active) {
+        this.active = active;
     }
 }
