@@ -28,6 +28,7 @@ import {
 } from "recharts";
 
 import ClimatePoster from "./ClimatePoster";
+import CommunityAnalytics from "./CommunityAnalytics";
 import "./Dashboard.css";
 import "./Analytics.css";
 
@@ -1347,6 +1348,16 @@ export default function Analytics({ token, refreshKey }) {
           )}
         </div>
       </section>
+      {/* COMMUNITY LEADERBOARD AND PEER BENCHMARKING */}
+
+    <CommunityAnalytics
+      token={token}
+      refreshKey={refreshKey}
+      filter={filter}
+      category={category}
+      selectedDate={selectedDate}
+      selectedMonth={selectedMonth}
+      />
 
       {/* FOOTER */}
       <footer className="dash-footer">
