@@ -24,7 +24,6 @@ public class User {
     private Integer age;
     private String role;
 
-    // Sustainability preferences
     private String preferredTransport;
     private String dietPreference;
     private String energySource;

@@ -1,0 +1,194 @@
+
+.analytics-page .dash-hero {
+  margin-bottom: 32px;
+}
+
+.analytics-filters {
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.analytics-filters label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #52665b;
+}
+
+.analytics-filters select {
+  min-width: 165px;
+  padding: 9px 12px;
+  border: 1px solid #dcefe3;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #234738;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+}
+
+.analytics-filters select:focus,
+.analytics-filters input:focus {
+  border-color: #159b70;
+}
+
+.analytics-reset {
+  border: 1px solid #dcefe3;
+  background: #eaf8ef;
+  color: #116f50;
+  border-radius: 9px;
+  padding: 9px 13px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.analytics-reset:hover {
+  background: #d7f2e1;
+}
+
+.analytics-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.analytics-page .dash-recent-panel {
+  margin-top: 20px;
+}
+
+.analytics-page .dash-activity-list {
+  max-height: 470px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+@media (max-width: 1100px) {
+  .analytics-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .analytics-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .analytics-filters {
+    align-items: flex-start;
+  }
+
+  .analytics-filters select {
+    width: 100%;
+  }
+
+  .analytics-filters .filter-count {
+    width: 100%;
+  }
+}
+
+/* ==========================================
+   NEW ACTIVITY LOGGING ANALYTICS
+   ========================================== */
+
+/* Section heading */
+.analytics-activity-heading {
+  margin-top: 36px;
+  margin-bottom: 20px;
+}
+
+.analytics-activity-heading h2 {
+  color: #173c2b;
+}
+
+/* Activity logging line chart */
+.analytics-activity-line-panel {
+  background: linear-gradient(
+    145deg,
+    #ffffff 0%,
+    #edf5ff 100%
+  );
+
+  border: 1px solid #dce9fa;
+
+  box-shadow:
+    0 8px 28px rgba(67, 111, 180, 0.06);
+
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+/* Activity category pie chart */
+.analytics-activity-pie-panel {
+  background: linear-gradient(
+    145deg,
+    #ffffff 0%,
+    #f4f0ff 100%
+  );
+
+  border: 1px solid #e9e0fa;
+
+  box-shadow:
+    0 8px 28px rgba(132, 99, 185, 0.06);
+
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+/* Hover animations */
+.analytics-activity-line-panel:hover,
+.analytics-activity-pie-panel:hover {
+  transform: translateY(-4px);
+
+  box-shadow:
+    0 16px 36px rgba(29, 84, 58, 0.12);
+}
+
+/* Activity line chart icon */
+.analytics-activity-line-panel .panel-icon {
+  background: #e2eeff;
+  color: #438fe0;
+}
+
+/* Activity pie chart icon */
+.analytics-activity-pie-panel .panel-icon {
+  background: #eee7ff;
+  color: #9067d7;
+}
+
+/* Chart total */
+.analytics-activity-line-panel .chart-total strong {
+  color: #245e9d;
+}
+
+/* Category distribution */
+.analytics-activity-pie-panel .category-row {
+  transition: background 0.2s ease;
+  border-radius: 8px;
+}
+
+.analytics-activity-pie-panel .category-row:hover {
+  background: rgba(144, 103, 215, 0.06);
+}
+
+/* Legend colors */
+.analytics-activity-pie-panel .category-name > span {
+  width: 10px;
+  height: 10px;
+  border-radius: 4px;
+}
+
+/* Responsive */
+@media (max-width: 760px) {
+  .analytics-activity-heading {
+    margin-top: 28px;
+  }
+
+  .analytics-activity-line-panel,
+  .analytics-activity-pie-panel {
+    padding: 18px;
+  }
+}

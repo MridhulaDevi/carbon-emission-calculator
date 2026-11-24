@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -8,7 +7,9 @@ import "./i18n";
 import LandingPage from "./LandingPage";
 import Sidebar from "./Sidebar";
 import LanguageSwitcher from "./LanguageSwitcher";
+import ForgotPassword from "./ForgotPassword";
 
+import Analytics from "./Analytics";
 import Dashboard from "./Dashboard";
 import Activities from "./Activities";
 import Goals from "./Goals";
@@ -18,6 +19,7 @@ import AdminBadges from "./AdminBadges";
 import Profile from "./Profile";
 
 import AdminDashboard from "./AdminDashboard";
+import AdminAnalytics from "./AdminAnalytics";
 import AdminUsers from "./AdminUsers";
 import AdminActivities from "./AdminActivities";
 import AdminEmissionFactors from "./AdminEmissionFactors";
@@ -57,10 +59,6 @@ function App() {
   const [message, setMessage] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // ==========================================
-  // PAGE NAVIGATION
-  // ==========================================
-
   const navigate = (nextPage) => {
     setPage(nextPage);
     setMessage("");
@@ -71,9 +69,9 @@ function App() {
     window.scrollTo(0, 0);
   }, [page]);
 
-  // ==========================================
+  // ================================
   // LOGIN
-  // ==========================================
+  // ================================
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -108,6 +106,8 @@ function App() {
 
       setToken(receivedToken);
       setLoginData(emptyLogin);
+      setShowPassword(false);
+
       navigate("dashboard");
 
     } catch (error) {
@@ -119,25 +119,21 @@ function App() {
     }
   };
 
-  // ==========================================
+  // ================================
   // REGISTER
-  // ==========================================
+  // ================================
 
   const handleRegister = async (e) => {
     e.preventDefault();
     setMessage("");
 
-    if (
-      registerData.password !== registerData.confirmPassword
-    ) {
+    if (registerData.password !== registerData.confirmPassword) {
       setMessage("Passwords do not match.");
       return;
     }
 
     if (registerData.password.length < 6) {
-      setMessage(
-        "Password must contain at least 6 characters."
-      );
+      setMessage("Password must contain at least 6 characters.");
       return;
     }
 
@@ -171,9 +167,7 @@ function App() {
       setRegisterData(emptyRegister);
       navigate("login");
 
-      setMessage(
-        "Registration successful. Please sign in."
-      );
+      setMessage("Registration successful. Please sign in.");
 
     } catch (error) {
       console.error("Registration error:", error);
@@ -184,9 +178,9 @@ function App() {
     }
   };
 
-  // ==========================================
+  // ================================
   // LOGOUT
-  // ==========================================
+  // ================================
 
   const logout = () => {
     localStorage.removeItem("token");
@@ -194,48 +188,65 @@ function App() {
 
     setToken("");
     setLoginData(emptyLogin);
+    setShowPassword(false);
     setMessage("");
 
     navigate("landing");
   };
 
-  // ==========================================
+  // ================================
   // LANDING PAGE
-  // ==========================================
+  // ================================
 
   if (page === "landing" && !token) {
     return (
       <div className="public-page-wrapper">
-        <div className="public-language-switcher">
-          
-        </div>
+
+        <div className="public-language-switcher"></div>
 
         <LandingPage
           onRegister={() => navigate("register")}
           onSignIn={() => navigate("login")}
           languageSelector={<LanguageSwitcher />}
         />
+
       </div>
     );
   }
 
-  // ==========================================
+  // ================================
+  // FORGOT PASSWORD PAGE
+  // ================================
+
+  if (page === "forgot-password" && !token) {
+    return (
+      <ForgotPassword
+        onBack={() => {
+          setLoginData(emptyLogin);
+          setShowPassword(false);
+          navigate("login");
+        }}
+      />
+    );
+  }
+
+  // ================================
   // LOGIN PAGE
-  // ==========================================
+  // ================================
 
   if (page === "login" && !token) {
     return (
       <div className="auth-page">
 
-        {/* LEFT VISUAL */}
-
         <div className="auth-visual">
+
           <div className="logo">
             <span className="logo-mark">↗</span>
             CarbonDown
           </div>
 
           <div className="visual-content">
+
             <span className="tag">
               PERSONAL CLIMATE TRACKER
             </span>
@@ -253,6 +264,7 @@ function App() {
             </p>
 
             <div className="visual-stats">
+
               <div>
                 <strong>01</strong>
                 <span>Track</span>
@@ -267,16 +279,17 @@ function App() {
                 <strong>03</strong>
                 <span>Reduce</span>
               </div>
+
             </div>
+
           </div>
 
           <div className="visual-bottom">
             <span>Small choices. Real impact.</span>
             <span>CarbonDown © 2026</span>
           </div>
-        </div>
 
-        {/* RIGHT LOGIN FORM */}
+        </div>
 
         <div className="auth-card-area">
 
@@ -326,6 +339,7 @@ function App() {
                     email: e.target.value,
                   })
                 }
+                autoComplete="email"
                 required
               />
 
@@ -337,9 +351,7 @@ function App() {
 
                 <button
                   type="button"
-                  onClick={() =>
-                    setShowPassword(!showPassword)
-                  }
+                  onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? t("hide") : t("show")}
                 </button>
@@ -348,9 +360,7 @@ function App() {
 
               <input
                 id="login-password"
-                type={
-                  showPassword ? "text" : "password"
-                }
+                type={showPassword ? "text" : "password"}
                 placeholder={t("password")}
                 value={loginData.password}
                 onChange={(e) =>
@@ -359,17 +369,32 @@ function App() {
                     password: e.target.value,
                   })
                 }
+                autoComplete="current-password"
                 required
               />
+
+              {/* FORGOT PASSWORD LINK */}
+
+              <button
+                type="button"
+                className="forgot-login-link"
+                disabled={loading}
+                onClick={() => {
+                  setShowPassword(false);
+                  navigate("forgot-password");
+                }}
+              >
+                {t("forgotPassword", {
+                  defaultValue: "Forgot password?",
+                })}
+              </button>
 
               <button
                 className="main-button"
                 type="submit"
                 disabled={loading}
               >
-                {loading
-                  ? t("signingIn")
-                  : t("signIn")}
+                {loading ? t("signingIn") : t("signIn")}
 
                 {!loading && <span>→</span>}
               </button>
@@ -396,20 +421,20 @@ function App() {
             </button>
 
           </div>
+
         </div>
+
       </div>
     );
   }
 
-  // ==========================================
+  // ================================
   // REGISTER PAGE
-  // ==========================================
+  // ================================
 
   if (page === "register" && !token) {
     return (
       <div className="register-page">
-
-        {/* LEFT VISUAL */}
 
         <div className="register-visual">
 
@@ -419,6 +444,7 @@ function App() {
           </div>
 
           <div>
+
             <span className="tag">
               {t("startJourney")}
             </span>
@@ -434,10 +460,10 @@ function App() {
               and start understanding your everyday
               environmental impact.
             </p>
-          </div>
-        </div>
 
-        {/* RIGHT REGISTER FORM */}
+          </div>
+
+        </div>
 
         <div className="register-form-area">
 
@@ -482,6 +508,7 @@ function App() {
                     name: e.target.value,
                   })
                 }
+                autoComplete="name"
                 required
               />
 
@@ -500,6 +527,7 @@ function App() {
                     email: e.target.value,
                   })
                 }
+                autoComplete="email"
                 required
               />
 
@@ -518,6 +546,7 @@ function App() {
                     password: e.target.value,
                   })
                 }
+                autoComplete="new-password"
                 minLength={6}
                 required
               />
@@ -537,12 +566,15 @@ function App() {
                     confirmPassword: e.target.value,
                   })
                 }
+                autoComplete="new-password"
+                minLength={6}
                 required
               />
 
               <div className="two-column">
 
                 <div>
+
                   <label htmlFor="register-gender">
                     {t("gender")}
                   </label>
@@ -573,10 +605,13 @@ function App() {
                     <option value="Other">
                       {t("other")}
                     </option>
+
                   </select>
+
                 </div>
 
                 <div>
+
                   <label htmlFor="register-age">
                     {t("age")}
                   </label>
@@ -596,6 +631,7 @@ function App() {
                     }
                     required
                   />
+
                 </div>
 
               </div>
@@ -605,9 +641,7 @@ function App() {
                 type="submit"
                 disabled={loading}
               >
-                {loading
-                  ? t("creating")
-                  : t("register")}
+                {loading ? t("creating") : t("register")}
 
                 {!loading && <span>→</span>}
               </button>
@@ -630,38 +664,40 @@ function App() {
               >
                 {t("signIn")} →
               </button>
+
             </p>
 
           </div>
+
         </div>
+
       </div>
     );
   }
 
-  // ==========================================
+  // ================================
   // PROTECT APPLICATION PAGES
-  // ==========================================
+  // ================================
 
   if (!token) {
     return (
       <div className="public-page-wrapper">
 
-        <div className="public-language-switcher">
-          <LanguageSwitcher />
-        </div>
+        <div className="public-language-switcher"></div>
 
         <LandingPage
           onRegister={() => navigate("register")}
           onSignIn={() => navigate("login")}
+          languageSelector={<LanguageSwitcher />}
         />
 
       </div>
     );
   }
 
-  // ==========================================
+  // ================================
   // MAIN APPLICATION
-  // ==========================================
+  // ================================
 
   return (
     <div className="app-layout">
@@ -674,22 +710,25 @@ function App() {
 
       <main className="app-content">
 
-        {/* GLOBAL LANGUAGE SELECTOR */}
-
         <div className="app-language-bar">
           <LanguageSwitcher />
         </div>
-
-        {/* DASHBOARD */}
 
         {page === "dashboard" && (
           <Dashboard
             key={refreshKey}
             token={token}
+            setPage={setPage}
           />
         )}
 
-        {/* ACTIVITIES */}
+        {page === "analytics" && (
+          <Analytics
+            token={token}
+            refreshKey={refreshKey}
+            setPage={setPage}
+          />
+        )}
 
         {page === "activities" && (
           <Activities
@@ -699,8 +738,6 @@ function App() {
             }
           />
         )}
-
-        {/* USER PAGES */}
 
         {page === "goals" && (
           <Goals token={token} />
@@ -721,10 +758,12 @@ function App() {
           />
         )}
 
-        {/* ADMIN PAGES */}
-
         {page === "admin" && (
           <AdminDashboard setPage={navigate} />
+        )}
+
+        {page === "admin-analytics" && (
+          <AdminAnalytics setPage={setPage} />
         )}
 
         {page === "admin-users" && (
@@ -744,6 +783,7 @@ function App() {
         )}
 
       </main>
+
     </div>
   );
 }

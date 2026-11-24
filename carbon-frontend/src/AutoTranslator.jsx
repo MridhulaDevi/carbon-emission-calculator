@@ -12,7 +12,7 @@ const API_URL = "https://api.mymemory.translated.net/get";
 const CACHE_KEY = "carbonDownTranslationCacheV2";
 
 const MAX_CACHE_ENTRIES = 1500;
-const MAX_CONCURRENT_REQUESTS = 2;
+const MAX_CONCURRENT_REQUESTS = 4;
 
 const originalNodes = new WeakMap();
 const pendingRequests = new Map();

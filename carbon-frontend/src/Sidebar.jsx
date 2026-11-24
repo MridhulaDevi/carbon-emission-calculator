@@ -1,9 +1,25 @@
 
+import React from "react";
 import { useTranslation } from "react-i18next";
+import {
+  LayoutDashboard,
+  ChartNoAxesCombined,
+  ClipboardList,
+  Target,
+  Lightbulb,
+  Award,
+  UserRound,
+  UsersRound,
+  ShieldCheck,
+  Settings2,
+  Leaf,
+  Globe2,
+  LogOut
+} from "lucide-react";
+
 import "./Sidebar.css";
 
 function Sidebar({ currentPage, setCurrentPage, onLogout }) {
-
   const { t } = useTranslation();
 
   // ==========================================
@@ -41,6 +57,10 @@ function Sidebar({ currentPage, setCurrentPage, onLogout }) {
         role = role[0];
       }
 
+      if (typeof role === "object" && role !== null) {
+        role = role.authority || role.role || "USER";
+      }
+
       role = String(role).toUpperCase();
 
       if (role.startsWith("ROLE_")) {
@@ -48,13 +68,8 @@ function Sidebar({ currentPage, setCurrentPage, onLogout }) {
       }
 
       return role;
-
     } catch (error) {
-      console.error(
-        "Unable to read JWT role:",
-        error
-      );
-
+      console.error("Unable to read JWT role:", error);
       return "USER";
     }
   };
@@ -69,32 +84,37 @@ function Sidebar({ currentPage, setCurrentPage, onLogout }) {
   const menu = [
     {
       id: "dashboard",
-      icon: "⌂",
+      icon: LayoutDashboard,
       label: t("dashboard")
     },
     {
+      id: "analytics",
+      icon: ChartNoAxesCombined,
+      label: t("analytics", { defaultValue: "Analytics" })
+    },
+    {
       id: "activities",
-      icon: "◷",
+      icon: ClipboardList,
       label: t("activities")
     },
     {
       id: "goals",
-      icon: "◎",
+      icon: Target,
       label: t("goals")
     },
     {
       id: "recommendations",
-      icon: "✳",
+      icon: Lightbulb,
       label: t("recommendations")
     },
     {
       id: "badges",
-      icon: "♕",
+      icon: Award,
       label: t("badges")
     },
     {
       id: "profile",
-      icon: "♙",
+      icon: UserRound,
       label: t("profile")
     }
   ];
@@ -106,30 +126,66 @@ function Sidebar({ currentPage, setCurrentPage, onLogout }) {
   const adminMenu = [
     {
       id: "admin",
-      icon: "▣",
+      icon: LayoutDashboard,
       label: t("adminDashboard")
     },
     {
+      id: "admin-analytics",
+      icon: ChartNoAxesCombined,
+      label: t("adminAnalytics", {
+        defaultValue: "Admin Analytics"
+      })
+    },
+    {
       id: "admin-users",
-      icon: "♙",
+      icon: UsersRound,
       label: t("manageUsers")
     },
     {
       id: "admin-activities",
-      icon: "◷",
+      icon: ClipboardList,
       label: t("manageActivities")
     },
     {
       id: "adminBadges",
-      icon: "♧",
+      icon: ShieldCheck,
       label: t("badgeManagement")
     },
     {
       id: "admin-factors",
-      icon: "⚙",
+      icon: Settings2,
       label: t("emissionFactors")
     }
   ];
+
+  // ==========================================
+  // REUSABLE MENU ITEM
+  // ==========================================
+
+  const renderMenuItem = (item) => {
+    const Icon = item.icon;
+
+    return (
+      <button
+        key={item.id}
+        type="button"
+        className={
+          currentPage === item.id
+            ? "sidebar-item active"
+            : "sidebar-item"
+        }
+        onClick={() => setCurrentPage(item.id)}
+      >
+        <span className="sidebar-item-icon">
+          <Icon size={19} strokeWidth={1.9} />
+        </span>
+
+        <span className="sidebar-item-text">
+          {item.label}
+        </span>
+      </button>
+    );
+  };
 
   return (
     <aside className="app-sidebar">
@@ -139,19 +195,14 @@ function Sidebar({ currentPage, setCurrentPage, onLogout }) {
       ===================================== */}
 
       <div className="sidebar-brand">
-
         <span className="brand-icon">
-          🌱
+          <Leaf size={23} strokeWidth={2} />
         </span>
 
         <div>
           <h2>CarbonDown</h2>
-
-          <small>
-            {t("liveGreener")}
-          </small>
+          <small>{t("liveGreener")}</small>
         </div>
-
       </div>
 
       {/* =====================================
@@ -163,32 +214,7 @@ function Sidebar({ currentPage, setCurrentPage, onLogout }) {
       </p>
 
       <nav className="sidebar-menu">
-
-        {menu.map((item) => (
-
-          <button
-            key={item.id}
-            type="button"
-            className={
-              currentPage === item.id
-                ? "sidebar-item active"
-                : "sidebar-item"
-            }
-            onClick={() =>
-              setCurrentPage(item.id)
-            }
-          >
-
-            <span>
-              {item.icon}
-            </span>
-
-            {item.label}
-
-          </button>
-
-        ))}
-
+        {menu.map(renderMenuItem)}
       </nav>
 
       {/* =====================================
@@ -202,32 +228,7 @@ function Sidebar({ currentPage, setCurrentPage, onLogout }) {
           </p>
 
           <nav className="sidebar-menu">
-
-            {adminMenu.map((item) => (
-
-              <button
-                key={item.id}
-                type="button"
-                className={
-                  currentPage === item.id
-                    ? "sidebar-item active"
-                    : "sidebar-item"
-                }
-                onClick={() =>
-                  setCurrentPage(item.id)
-                }
-              >
-
-                <span>
-                  {item.icon}
-                </span>
-
-                {item.label}
-
-              </button>
-
-            ))}
-
+            {adminMenu.map(renderMenuItem)}
           </nav>
         </>
       )}
@@ -237,15 +238,12 @@ function Sidebar({ currentPage, setCurrentPage, onLogout }) {
       ===================================== */}
 
       <div className="sidebar-bottom">
-
         <div className="sidebar-tip">
+          <span className="sidebar-tip-icon">
+            <Globe2 size={22} strokeWidth={1.8} />
+          </span>
 
-          <span>🌍</span>
-
-          <p>
-            {t("tip")}
-          </p>
-
+          <p>{t("tip")}</p>
         </div>
 
         <button
@@ -253,9 +251,9 @@ function Sidebar({ currentPage, setCurrentPage, onLogout }) {
           className="logout-btn"
           onClick={onLogout}
         >
-          ↪ {t("logout")}
+          <LogOut size={18} strokeWidth={1.9} />
+          <span>{t("logout")}</span>
         </button>
-
       </div>
 
     </aside>

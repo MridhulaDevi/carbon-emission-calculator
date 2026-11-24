@@ -86,7 +86,7 @@ function LandingPage({ onRegister, onSignIn, languageSelector = null }) {
 
         <div className="lp-auth-actions">
           <span className="lp-new-label">
-            {tr("landing.newHere", "New here?")}
+            {tr("landing.newHere", "")}
           </span>
 
           <div className="lp-language-slot">

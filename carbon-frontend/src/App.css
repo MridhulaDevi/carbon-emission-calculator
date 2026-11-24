@@ -558,3 +558,62 @@ body {
     padding: 12px 5% 0;
   }
 }
+/* ================================
+   FORGOT PASSWORD LINK
+================================ */
+
+.auth-card form .forgot-login-link {
+  display: block;
+  width: fit-content;
+  align-self: flex-end;
+  margin: 10px 0 18px auto;
+  padding: 4px 0;
+
+  background: transparent;
+  border: none;
+  outline: none;
+  box-shadow: none;
+
+  color: #176b50;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+
+  cursor: pointer;
+  transition: all 0.25s ease;
+  position: relative;
+}
+
+.auth-card form .forgot-login-link::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 1.5px;
+  background: #176b50;
+  transition: width 0.25s ease;
+}
+
+.auth-card form .forgot-login-link:hover {
+  color: #0d4936;
+}
+
+.auth-card form .forgot-login-link:hover::after {
+  width: 100%;
+}
+
+.auth-card form .forgot-login-link:focus-visible {
+  outline: 2px solid #176b50;
+  outline-offset: 4px;
+}
+
+.auth-card form .forgot-login-link:active {
+  transform: scale(0.97);
+}
+
+.auth-card form .forgot-login-link:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

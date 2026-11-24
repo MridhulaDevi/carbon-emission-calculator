@@ -1,6 +1,7 @@
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Globe2, Search, ChevronDown, Check, X } from "lucide-react";
 import {
   LANGUAGES,
   getLanguage,
@@ -13,9 +14,31 @@ export default function LanguageSwitcher() {
   const { i18n } = useTranslation();
 
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+
   const containerRef = useRef(null);
+  const searchRef = useRef(null);
 
   const selected = getLanguage(i18n.language);
+
+  const filteredLanguages = useMemo(() => {
+    const query = search.trim().toLocaleLowerCase();
+
+    if (!query) return LANGUAGES;
+
+    return LANGUAGES.filter((language) =>
+      [
+        language.name,
+        language.native,
+        language.short,
+        language.code
+      ].some((value) =>
+        String(value || "")
+          .toLocaleLowerCase()
+          .includes(query)
+      )
+    );
+  }, [search]);
 
   useEffect(() => {
     function handleOutsideClick(event) {
@@ -42,11 +65,20 @@ export default function LanguageSwitcher() {
     };
   }, []);
 
+  useEffect(() => {
+    if (open) {
+      searchRef.current?.focus();
+    } else {
+      setSearch("");
+    }
+  }, [open]);
+
   function changeLanguage(code) {
     const language = normalizeLanguage(code);
 
     i18n.changeLanguage(language);
     setOpen(false);
+    setSearch("");
   }
 
   return (
@@ -63,44 +95,110 @@ export default function LanguageSwitcher() {
         aria-expanded={open}
         aria-haspopup="true"
       >
-        <span className="language-globe">🌐</span>
+        <Globe2 size={18} strokeWidth={1.9} />
 
         <span>{selected.short}</span>
 
-        <span className="language-arrow">
-          {open ? "⌃" : "⌄"}
-        </span>
+        <ChevronDown
+          size={16}
+          className={`language-chevron ${open ? "open" : ""}`}
+        />
       </button>
 
       {open && (
         <div className="carbon-language-dropdown">
           <div className="language-dropdown-heading">
-            SELECT LANGUAGE
+            <span>SELECT LANGUAGE</span>
+            <span className="language-count">
+              {LANGUAGES.length} languages
+            </span>
           </div>
 
-          {LANGUAGES.map((language) => {
-            const active = selected.code === language.code;
+          <div className="language-search-box">
+            <Search size={17} />
 
-            return (
+            <input
+              ref={searchRef}
+              type="text"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search languages..."
+              aria-label="Search languages"
+            />
+
+            {search && (
               <button
                 type="button"
-                key={language.code}
-                className={
-                  `language-option ${active ? "selected" : ""}`
-                }
-                onClick={() => changeLanguage(language.code)}
-                aria-pressed={active}
+                className="language-search-clear"
+                onClick={() => {
+                  setSearch("");
+                  searchRef.current?.focus();
+                }}
+                aria-label="Clear search"
               >
-                <span className="language-radio">
-                  {active ? "◉" : "○"}
-                </span>
-
-                <span>{language.native}</span>
-
-                <small>{language.short}</small>
+                <X size={15} />
               </button>
-            );
-          })}
+            )}
+          </div>
+
+          <div className="language-results-label">
+            {search
+              ? `${filteredLanguages.length} results`
+              : "AVAILABLE LANGUAGES"}
+          </div>
+
+          <div className="language-options-list">
+            {filteredLanguages.length > 0 ? (
+              filteredLanguages.map((language) => {
+                const active = selected.code === language.code;
+
+                return (
+                  <button
+                    type="button"
+                    key={language.code}
+                    className={`language-option ${
+                      active ? "selected" : ""
+                    }`}
+                    onClick={() => changeLanguage(language.code)}
+                    aria-pressed={active}
+                  >
+                    <span className="language-option-name">
+                      <span className="language-native">
+                        {language.native || language.name || language.code}
+                      </span>
+
+                      {language.name &&
+                        language.name !== language.native && (
+                          <span className="language-english">
+                            {language.name}
+                          </span>
+                        )}
+                    </span>
+
+                    {active ? (
+                      <Check
+                        size={17}
+                        className="language-selected-check"
+                      />
+                    ) : (
+                      <small>{language.short}</small>
+                    )}
+                  </button>
+                );
+              })
+            ) : (
+              <div className="language-empty">
+                <Search size={23} />
+                <strong>No languages found</strong>
+                <span>Try another language name.</span>
+              </div>
+            )}
+          </div>
+
+          <div className="language-dropdown-footer">
+            <Globe2 size={14} />
+            <span>Choose your preferred language</span>
+          </div>
         </div>
       )}
     </div>
