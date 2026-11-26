@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 
 import "./App.css";
 import "./i18n";
@@ -10,6 +11,7 @@ import LanguageSwitcher from "./LanguageSwitcher";
 import ForgotPassword from "./ForgotPassword";
 
 import Analytics from "./Analytics";
+import Leaderboard from "./Leaderboard";
 import Dashboard from "./Dashboard";
 import Activities from "./Activities";
 import Goals from "./Goals";
@@ -25,6 +27,8 @@ import AdminActivities from "./AdminActivities";
 import AdminEmissionFactors from "./AdminEmissionFactors";
 
 const API = "http://localhost:8080";
+
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 const emptyLogin = {
   email: "",
@@ -117,6 +121,133 @@ function App() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // ================================
+  // GOOGLE AUTHENTICATION
+  // ================================
+
+  const handleGoogleLogin = async (credentialResponse) => {
+
+    if (loading) return;
+
+    const credential = credentialResponse?.credential;
+
+    if (!credential) {
+      setMessage("Google authentication failed. Please try again.");
+      return;
+    }
+
+    setLoading(true);
+    setMessage("");
+
+    try {
+
+      const response = await fetch(`${API}/api/auth/google`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          credential: credential,
+        }),
+      });
+
+      const data = await response.text();
+
+      if (!response.ok) {
+        setMessage(data || "Google sign-in failed.");
+        return;
+      }
+
+      const receivedToken = data.trim();
+
+      if (!receivedToken) {
+        setMessage("Google sign-in failed: no token received.");
+        return;
+      }
+
+      localStorage.setItem("token", receivedToken);
+
+      setToken(receivedToken);
+      setLoginData(emptyLogin);
+      setRegisterData(emptyRegister);
+      setShowPassword(false);
+
+      navigate("dashboard");
+
+    } catch (error) {
+
+      console.error("Google authentication error:", error);
+
+      setMessage(
+        "Cannot connect to server. Please try again."
+      );
+
+    } finally {
+
+      setLoading(false);
+
+    }
+  };
+
+  const handleGoogleError = () => {
+    setMessage("Google sign-in was unsuccessful. Please try again.");
+  };
+
+  // ================================
+  // GOOGLE SIGN-IN BUTTON
+  // ================================
+
+  const renderGoogleLogin = () => {
+
+    if (!GOOGLE_CLIENT_ID) {
+      return null;
+    }
+
+    return (
+      <div className="carbon-google-auth">
+
+        <div className="carbon-google-divider">
+          <span>
+            {t("orContinueWith", {
+              defaultValue: "or continue with",
+            })}
+          </span>
+        </div>
+
+        <div
+          className={`carbon-google-button ${
+            loading ? "carbon-google-disabled" : ""
+          }`}
+        >
+
+          <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+
+            <GoogleLogin
+              onSuccess={handleGoogleLogin}
+              onError={handleGoogleError}
+              theme="outline"
+              size="large"
+              shape="rectangular"
+              text="continue_with"
+              logo_alignment="left"
+              width="280"
+              useOneTap={false}
+            />
+
+          </GoogleOAuthProvider>
+
+        </div>
+
+        <p className="carbon-google-caption">
+          {t("googleAuthCaption", {
+            defaultValue: "Secure authentication with your Google account",
+          })}
+        </p>
+
+      </div>
+    );
   };
 
   // ================================
@@ -401,6 +532,10 @@ function App() {
 
             </form>
 
+            {/* GOOGLE SIGN-IN */}
+
+            {renderGoogleLogin()}
+
             {message && (
               <div className="auth-message">
                 {message}
@@ -648,6 +783,10 @@ function App() {
 
             </form>
 
+            {/* GOOGLE REGISTRATION */}
+
+            {renderGoogleLogin()}
+
             {message && (
               <div className="auth-message">
                 {message}
@@ -729,6 +868,12 @@ function App() {
             setPage={setPage}
           />
         )}
+        {page === "leaderboard" && (
+  <Leaderboard
+    token={token}
+    refreshKey={refreshKey}
+  />
+)}
 
         {page === "activities" && (
           <Activities

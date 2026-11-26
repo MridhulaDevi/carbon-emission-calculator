@@ -110,7 +110,7 @@ export default function LanguageSwitcher() {
           <div className="language-dropdown-heading">
             <span>SELECT LANGUAGE</span>
             <span className="language-count">
-              {LANGUAGES.length} languages
+              
             </span>
           </div>
 

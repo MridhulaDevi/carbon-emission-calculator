@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-
 import {
   Trophy,
   Users,
@@ -63,7 +62,8 @@ export default function CommunityAnalytics({
   filter = "month",
   category = "all",
   selectedDate,
-  selectedMonth
+  selectedMonth,
+  view = "benchmark"
 }) {
 
   const [data, setData] = useState(null);
@@ -71,10 +71,10 @@ export default function CommunityAnalytics({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [reload, setReload] = useState(0);
+  const [search, setSearch] = useState("");
 
-  // ==========================================
-  // FETCH COMMUNITY ANALYTICS
-  // ==========================================
+  const showLeaderboard = view === "leaderboard";
+  const showBenchmark = view === "benchmark";
 
   useEffect(() => {
 
@@ -172,65 +172,57 @@ export default function CommunityAnalytics({
   ]);
 
   // ==========================================
-  // LOWEST EMISSION LEADERBOARD
+  // LOWEST EMISSION RANKING
   // ==========================================
 
   const emissionLeaderboard =
     Array.isArray(data?.leaderboard)
-      ? data.leaderboard
-      : [];
-
-  // ==========================================
-  // MOST ACTIVE USERS LEADERBOARD
-  // ==========================================
-
-  const activityLeaderboard =
-    Array.isArray(data?.activityLeaderboard)
-      ? data.activityLeaderboard
-      : [...emissionLeaderboard]
-          .sort((a, b) => {
-
-            const countDifference =
-              Number(b.activityCount || 0) -
-              Number(a.activityCount || 0);
-
-            if (countDifference !== 0) {
-              return countDifference;
-            }
-
-            return (
-              Number(a.totalEmission || 0) -
-              Number(b.totalEmission || 0)
-            );
-
-          })
+      ? [...data.leaderboard]
+          .sort((a, b) =>
+            Number(a.totalEmission || 0) -
+            Number(b.totalEmission || 0)
+          )
           .map((user, index) => ({
             ...user,
             rank: index + 1
-          }));
+          }))
+      : [];
 
   // ==========================================
-  // SELECTED LEADERBOARD
+  // MOST ACTIVE USERS RANKING
   // ==========================================
+
+  const activityLeaderboard = [
+    ...(Array.isArray(data?.activityLeaderboard)
+      ? data.activityLeaderboard
+      : emissionLeaderboard)
+  ]
+    .sort((a, b) => {
+
+      const countDifference =
+        Number(b.activityCount || 0) -
+        Number(a.activityCount || 0);
+
+      if (countDifference !== 0) {
+        return countDifference;
+      }
+
+      return (
+        Number(a.totalEmission || 0) -
+        Number(b.totalEmission || 0)
+      );
+    })
+    .map((user, index) => ({
+      ...user,
+      rank: index + 1
+    }));
 
   const rankedUsers =
-    mode === "activity"
+    showLeaderboard && mode === "activity"
       ? activityLeaderboard
       : emissionLeaderboard;
 
-  const getRank = user => {
-
-    if (
-      validNumber(user.rank) &&
-      Number(user.rank) > 0
-    ) {
-      return Number(user.rank);
-    }
-
-    return rankedUsers.findIndex(
-      item => item.userId === user.userId
-    ) + 1;
-  };
+  const getRank = user => user.rank;
 
   const currentUser = rankedUsers.find(
     user => user.isCurrentUser
@@ -239,6 +231,12 @@ export default function CommunityAnalytics({
   const myRank = currentUser
     ? getRank(currentUser)
     : null;
+
+  const visibleUsers = rankedUsers.filter(user =>
+    displayName(user)
+      .toLowerCase()
+      .includes(search.trim().toLowerCase())
+  );
 
   // ==========================================
   // PEER BENCHMARKING
@@ -301,17 +299,9 @@ export default function CommunityAnalytics({
       ? Number(benchmark.percentile)
       : null;
 
-  // ==========================================
-  // COMMUNITY ACTIVITY POSTS
-  // ==========================================
-
   const posts = Array.isArray(data?.posts)
     ? data.posts
     : [];
-
-  // ==========================================
-  // MAIN UI
-  // ==========================================
 
   return (
 
@@ -322,15 +312,21 @@ export default function CommunityAnalytics({
         <div>
 
           <span className="ca-eyebrow">
-            BETTER TOGETHER
+            {showLeaderboard
+              ? "CLIMATE CHAMPIONS"
+              : "BETTER TOGETHER"}
           </span>
 
-          <h2>Community & Peer Insights</h2>
+          <h2>
+            {showLeaderboard
+              ? "Community Rankings"
+              : "Community & Peer Insights"}
+          </h2>
 
           <p>
-            Discover your position in the CarbonDown
-            community and compare your environmental
-            impact.
+            {showLeaderboard
+              ? "Celebrate the sustainability champions of CarbonDown."
+              : "Discover your position in the CarbonDown community and compare your environmental impact."}
           </p>
 
         </div>
@@ -343,14 +339,11 @@ export default function CommunityAnalytics({
             setReload(value => value + 1)
           }
         >
-
           <RefreshCw
             size={15}
             className={loading ? "ca-spinning" : ""}
           />
-
           Refresh
-
         </button>
 
       </div>
@@ -358,14 +351,11 @@ export default function CommunityAnalytics({
       {loading ? (
 
         <div className="ca-state">
-
           <RefreshCw
             size={25}
             className="ca-spinning"
           />
-
           <p>Preparing community insights...</p>
-
         </div>
 
       ) : error ? (
@@ -396,9 +386,7 @@ export default function CommunityAnalytics({
 
         <>
 
-          {/* =====================================
-              COMMUNITY SUMMARY
-          ====================================== */}
+          {/* COMMUNITY SUMMARY */}
 
           <div className="ca-summary-grid">
 
@@ -433,9 +421,9 @@ export default function CommunityAnalytics({
               </strong>
 
               <small>
-                {mode === "emission"
-                  ? "Lowest recorded emissions"
-                  : "Activity logging rank"}
+                {showLeaderboard && mode === "activity"
+                  ? "Activity logging rank"
+                  : "Lowest recorded emissions"}
               </small>
 
             </article>
@@ -469,7 +457,6 @@ export default function CommunityAnalytics({
               <span>Peer average</span>
 
               <strong>
-
                 {peerAverage !== null
                   ? fmt(peerAverage)
                   : "—"}
@@ -477,7 +464,6 @@ export default function CommunityAnalytics({
                 {peerAverage !== null && (
                   <em> kg</em>
                 )}
-
               </strong>
 
               <small>
@@ -490,910 +476,861 @@ export default function CommunityAnalytics({
           </div>
 
           {/* =====================================
-              GREEN LEADERBOARD
+              LEADERBOARD PAGE ONLY
           ====================================== */}
 
-          <section className="ca-panel">
+          {showLeaderboard && (
 
-            <div className="ca-panel-header">
+            <section className="ca-panel">
 
-              <div>
+              <div className="ca-panel-header">
 
-                <span className="ca-eyebrow">
-                  COMMUNITY RANKINGS
-                </span>
+                <div>
 
-                <h3>
-                  <Trophy size={22} />
-                  Green Leaderboard
-                </h3>
+                  <span className="ca-eyebrow">
+                    COMMUNITY RANKINGS
+                  </span>
 
-                <p>
-                  Celebrate consistent tracking and
-                  lower recorded carbon footprints.
-                </p>
+                  <h3>
+                    <Trophy size={22} />
+                    Green Leaderboard
+                  </h3>
 
-              </div>
+                  <p>
+                    Celebrate consistent tracking and
+                    lower recorded carbon footprints.
+                  </p>
 
-              <div className="ca-tabs">
+                </div>
 
-                <button
-                  type="button"
-                  className={
-                    mode === "emission"
-                      ? "active"
-                      : ""
-                  }
-                  onClick={() =>
-                    setMode("emission")
-                  }
-                >
+                <div className="ca-tabs">
 
-                  <Leaf size={15} />
+                  <button
+                    type="button"
+                    className={
+                      mode === "emission" ? "active" : ""
+                    }
+                    onClick={() => {
+                      setMode("emission");
+                      setSearch("");
+                    }}
+                  >
+                    <Leaf size={15} />
+                    Lowest emissions
+                  </button>
 
-                  Lowest emissions
+                  <button
+                    type="button"
+                    className={
+                      mode === "activity" ? "active" : ""
+                    }
+                    onClick={() => {
+                      setMode("activity");
+                      setSearch("");
+                    }}
+                  >
+                    <Activity size={15} />
+                    Most active
+                  </button>
 
-                </button>
-
-                <button
-                  type="button"
-                  className={
-                    mode === "activity"
-                      ? "active"
-                      : ""
-                  }
-                  onClick={() =>
-                    setMode("activity")
-                  }
-                >
-
-                  <Activity size={15} />
-
-                  Most active
-
-                </button>
+                </div>
 
               </div>
 
-            </div>
+              {rankedUsers.length > 0 ? (
 
-            {rankedUsers.length > 0 ? (
+                <>
 
-              <>
+                  {/* TOP THREE USERS */}
 
-                {/* TOP THREE USERS */}
+                  <div className="ca-podium">
 
-                <div className="ca-podium">
+                    {[1, 0, 2].map(index => {
 
-                  {[1, 0, 2].map(index => {
+                      const user = rankedUsers[index];
 
-                    const user = rankedUsers[index];
+                      if (!user) return null;
 
-                    if (!user) return null;
+                      const rank = getRank(user);
 
-                    const rank = getRank(user);
+                      return (
 
-                    return (
+                        <div
+                          key={user.userId}
+                          className={
+                            `ca-podium-card ca-place-${index + 1}`
+                          }
+                        >
 
-                      <div
-                        key={user.userId}
-                        className={
-                          `ca-podium-card ca-place-${index + 1}`
-                        }
-                      >
+                          {index === 0 && (
+                            <Crown
+                              size={27}
+                              className="ca-crown"
+                            />
+                          )}
 
-                        {index === 0 && (
+                          <div className="ca-podium-avatar">
+                            {initials(displayName(user))}
+                          </div>
 
-                          <Crown
-                            size={27}
-                            className="ca-crown"
-                          />
-
-                        )}
-
-                        <div className="ca-podium-avatar">
-
-                          {initials(displayName(user))}
-
-                        </div>
-
-                        <span className="ca-podium-rank">
-
-                          #{rank}
-
-                        </span>
-
-                        <strong>
-                          {displayName(user)}
-                        </strong>
-
-                        {user.isCurrentUser && (
-
-                          <span className="ca-you">
-                            YOU
+                          <span className="ca-podium-rank">
+                            #{rank}
                           </span>
 
-                        )}
-
-                        <b>
-
-                          {mode === "emission"
-                            ? fmt(user.totalEmission)
-                            : user.activityCount ?? 0}
-
-                        </b>
-
-                        <small>
-
-                          {mode === "emission"
-                            ? "kg CO₂e"
-                            : "activities logged"}
-
-                        </small>
-
-                      </div>
-
-                    );
-
-                  })}
-
-                </div>
-
-                {/* COMPLETE RANKING TABLE */}
-
-                <div className="ca-table-scroll">
-
-                  <table className="ca-table">
-
-                    <thead>
-
-                      <tr>
-                        <th>Rank</th>
-                        <th>Community member</th>
-                        <th>Activities</th>
-                        <th>Emissions</th>
-                      </tr>
-
-                    </thead>
-
-                    <tbody>
-
-                      {rankedUsers.map(user => {
-
-                        const rank = getRank(user);
-
-                        return (
-
-                          <tr
-                            key={user.userId}
-                            className={
-                              user.isCurrentUser
-                                ? "ca-current-user"
-                                : ""
-                            }
-                          >
-
-                            <td>
-
-                              <span
-                                className={
-                                  `ca-rank ca-rank-${rank}`
-                                }
-                              >
-
-                                {rank <= 3 && (
-                                  <Medal size={16} />
-                                )}
-
-                                #{rank}
-
-                              </span>
-
-                            </td>
-
-                            <td>
-
-                              <div className="ca-member">
-
-                                <div className="ca-avatar">
-
-                                  {initials(
-                                    displayName(user)
-                                  )}
-
-                                </div>
-
-                                <strong>
-                                  {displayName(user)}
-                                </strong>
-
-                                {user.isCurrentUser && (
-
-                                  <span className="ca-you">
-                                    YOU
-                                  </span>
-
-                                )}
-
-                              </div>
-
-                            </td>
-
-                            <td>
-                              {user.activityCount ?? 0}
-                            </td>
-
-                            <td>
-
-                              <strong>
-                                {fmt(user.totalEmission)}
-                              </strong>
-
-                              <small> kg CO₂e</small>
-
-                            </td>
-
-                          </tr>
-
-                        );
-
-                      })}
-
-                    </tbody>
-
-                  </table>
-
-                </div>
-
-              </>
-
-            ) : (
-
-              <div className="ca-state">
-
-                <Trophy size={27} />
-
-                <strong>
-                  No eligible users
-                </strong>
-
-                <p>
-                  No activities match the selected
-                  period and category. Try selecting
-                  All Time and All Categories.
-                </p>
-
-              </div>
-
-            )}
-
-            <div className="ca-note">
-
-              <ShieldCheck size={16} />
-
-              Rankings reflect recorded activities only.
-              Lower recorded emissions do not necessarily
-              mean a lower complete carbon footprint.
-
-            </div>
-
-          </section>
-
-          {/* =====================================
-              PEER BENCHMARKING
-          ====================================== */}
-
-          <section className="ca-panel">
-
-            <div className="ca-panel-header">
-
-              <div>
-
-                <span className="ca-eyebrow">
-                  COMMUNITY COMPARISON
-                </span>
-
-                <h3>
-                  <BarChart3 size={22} />
-                  Peer Benchmarking
-                </h3>
-
-                <p>
-                  Compare your footprint with the
-                  CarbonDown user community.
-                </p>
-
-              </div>
-
-              <span className="ca-privacy">
-
-                <Users size={15} />
-
-                {peerCount} eligible{" "}
-                {peerCount === 1 ? "peer" : "peers"}
-
-              </span>
-
-            </div>
-
-            {canCompare ? (
-
-              <>
-
-                {/* BENCHMARK SUMMARY */}
-
-                <div className="ca-benchmark-hero">
-
-                  <div>
+                          <strong>
+                            {displayName(user)}
+                          </strong>
+
+                          {user.isCurrentUser && (
+                            <span className="ca-you">
+                              YOU
+                            </span>
+                          )}
+
+                          <b>
+                            {mode === "emission"
+                              ? fmt(user.totalEmission)
+                              : user.activityCount ?? 0}
+                          </b>
+
+                          <small>
+                            {mode === "emission"
+                              ? "kg CO₂e"
+                              : "activities logged"}
+                          </small>
+
+                        </div>
+                      );
+                    })}
+
+                  </div>
+
+                  {/* SEARCH COMMUNITY MEMBERS */}
+
+                  <div className="lb-search-bar">
+
+                    <input
+                      type="search"
+                      placeholder="Search community members..."
+                      aria-label="Search community members"
+                      value={search}
+                      onChange={e => setSearch(e.target.value)}
+                    />
 
                     <span>
-                      YOUR RECORDED FOOTPRINT
+                      {visibleUsers.length} of{" "}
+                      {rankedUsers.length} members
                     </span>
 
-                    <h4>
-
-                      {fmt(myEmission)}
-
-                      <small> kg CO₂e</small>
-
-                    </h4>
-
-                    {difference !== null ? (
-
-                      <div
-                        className={
-                          `ca-performance ${
-                            difference <= 0
-                              ? "ca-positive"
-                              : "ca-negative"
-                          }`
-                        }
+                    {search && (
+                      <button
+                        type="button"
+                        onClick={() => setSearch("")}
                       >
-
-                        {difference <= 0 ? (
-
-                          <ArrowDownRight size={19} />
-
-                        ) : (
-
-                          <ArrowUpRight size={19} />
-
-                        )}
-
-                        {difference === 0
-                          ? "Equal to peer average"
-                          : `${Math.abs(difference).toFixed(1)}% ${
-                              difference < 0
-                                ? "below"
-                                : "above"
-                            } peer average`}
-
-                      </div>
-
-                    ) : comparisonStatus === "equal" ? (
-
-                      <div className="ca-performance ca-positive">
-
-                        <Leaf size={19} />
-
-                        Equal to peer average
-
-                      </div>
-
-                    ) : (
-
-                      <div className="ca-performance ca-negative">
-
-                        <ArrowUpRight size={19} />
-
-                        {fmt(myEmission - peerAverage)} kg
-                        above peer average
-
-                      </div>
-
+                        Clear
+                      </button>
                     )}
 
                   </div>
 
-                  <div className="ca-percentile">
+                  {/* COMPLETE RANKING TABLE */}
 
-                    <strong>
+                  <div className="ca-table-scroll">
 
-                      {percentile !== null
-                        ? `${fmt(percentile)}%`
-                        : "—"}
+                    <table className="ca-table">
 
-                    </strong>
+                      <thead>
+                        <tr>
+                          <th>Rank</th>
+                          <th>Community member</th>
+                          <th>Activities</th>
+                          <th>Emissions</th>
+                        </tr>
+                      </thead>
 
-                    <span>
-                      Relative standing
-                    </span>
+                      <tbody>
 
-                    <small>
-                      Percentage of eligible peers
-                      with higher emissions
-                    </small>
+                        {visibleUsers.map(user => {
+
+                          const rank = getRank(user);
+
+                          return (
+
+                            <tr
+                              key={user.userId}
+                              className={
+                                user.isCurrentUser
+                                  ? "ca-current-user"
+                                  : ""
+                              }
+                            >
+
+                              <td>
+
+                                <span
+                                  className={
+                                    `ca-rank ca-rank-${rank}`
+                                  }
+                                >
+
+                                  {rank <= 3 && (
+                                    <Medal size={16} />
+                                  )}
+
+                                  #{rank}
+
+                                </span>
+
+                              </td>
+
+                              <td>
+
+                                <div className="ca-member">
+
+                                  <div className="ca-avatar">
+                                    {initials(displayName(user))}
+                                  </div>
+
+                                  <strong>
+                                    {displayName(user)}
+                                  </strong>
+
+                                  {user.isCurrentUser && (
+                                    <span className="ca-you">
+                                      YOU
+                                    </span>
+                                  )}
+
+                                </div>
+
+                              </td>
+
+                              <td>
+                                {user.activityCount ?? 0}
+                              </td>
+
+                              <td>
+                                <strong>
+                                  {fmt(user.totalEmission)}
+                                </strong>
+
+                                <small> kg CO₂e</small>
+                              </td>
+
+                            </tr>
+                          );
+                        })}
+
+                        {visibleUsers.length === 0 && (
+                          <tr>
+                            <td colSpan={4}>
+                              <div className="ca-state">
+                                No matching members found.
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+
+                      </tbody>
+
+                    </table>
 
                   </div>
 
-                </div>
-
-                {/* EMISSION COMPARISON BARS */}
-
-                <div className="ca-comparison">
-
-                  <div className="ca-bar-label">
-
-                    <span>Your emissions</span>
-
-                    <strong>
-                      {fmt(myEmission)} kg
-                    </strong>
-
-                  </div>
-
-                  <div className="ca-bar-track">
-
-                    <div
-                      className="ca-bar-you"
-                      style={{
-                        width:
-                          `${myEmission / comparisonMax * 100}%`
-                      }}
-                    />
-
-                  </div>
-
-                  <div className="ca-bar-label">
-
-                    <span>Community average</span>
-
-                    <strong>
-                      {fmt(peerAverage)} kg
-                    </strong>
-
-                  </div>
-
-                  <div className="ca-bar-track">
-
-                    <div
-                      className="ca-bar-peer"
-                      style={{
-                        width:
-                          `${peerAverage / comparisonMax * 100}%`
-                      }}
-                    />
-
-                  </div>
-
-                </div>
-
-                <div className="ca-benchmark-legend">
-
-                  <span>
-
-                    <i className="ca-dot-you" />
-
-                    Your emissions
-
-                  </span>
-
-                  <span>
-
-                    <i className="ca-dot-peer" />
-
-                    Peer average
-
-                  </span>
-
-                </div>
-
-                {/* CATEGORY-WISE BENCHMARKING */}
-
-                <h4 className="ca-category-heading">
-
-                  Category-wise comparison
-
-                </h4>
-
-                <div className="ca-category-grid">
-
-                  {categories
-                    .filter(item =>
-                      category === "all" ||
-                      category === item
-                    )
-                    .map(item => {
-
-                      const info =
-                        benchmark?.categories?.[item];
-
-                      const mine = Number(
-                        info?.myEmission || 0
-                      );
-
-                      const peer =
-                        validNumber(info?.peerAverage)
-                          ? Number(info.peerAverage)
-                          : null;
-
-                      const max = Math.max(
-                        mine,
-                        peer || 0,
-                        1
-                      );
-
-                      return (
-
-                        <article
-                          key={item}
-                          className="ca-category-card"
-                        >
-
-                          <div className="ca-category-name">
-
-                            <span
-                              style={{
-                                background: colors[item]
-                              }}
-                            />
-
-                            <strong>
-                              {title(item)}
-                            </strong>
-
-                          </div>
-
-                          <div className="ca-bar-label">
-
-                            <span>You</span>
-
-                            <strong>
-                              {fmt(mine)} kg
-                            </strong>
-
-                          </div>
-
-                          <div className="ca-bar-track">
-
-                            <div
-                              className="ca-bar-you"
-                              style={{
-                                width:
-                                  `${mine / max * 100}%`
-                              }}
-                            />
-
-                          </div>
-
-                          <div className="ca-bar-label">
-
-                            <span>Peer average</span>
-
-                            <strong>
-
-                              {peer !== null
-                                ? `${fmt(peer)} kg`
-                                : "Unavailable"}
-
-                            </strong>
-
-                          </div>
-
-                          <div className="ca-bar-track">
-
-                            <div
-                              className="ca-bar-peer"
-                              style={{
-                                width:
-                                  `${(peer || 0) / max * 100}%`
-                              }}
-                            />
-
-                          </div>
-
-                          <small
-                            className={
-                              peer === null
-                                ? "ca-neutral-text"
-                                : mine <= peer
-                                ? "ca-positive-text"
-                                : "ca-negative-text"
-                            }
-                          >
-
-                            {peer === null
-                              ? "Insufficient peer data"
-                              : mine === peer
-                              ? "Equal to peer average"
-                              : mine < peer
-                              ? `${fmt(peer - mine)} kg below average`
-                              : `${fmt(mine - peer)} kg above average`}
-
-                          </small>
-
-                        </article>
-
-                      );
-
-                    })}
-
-                </div>
-
-              </>
-
-            ) : (
-
-              <div className="ca-state">
-
-                <BarChart3 size={28} />
-
-                <strong>
-                  Not enough comparison data
-                </strong>
-
-                <p>
-
-                  {!currentUser
-                    ? "Log an activity within the selected period and category to compare your emissions."
-                    : peerCount === 0
-                    ? "No other users have recorded matching activities. Try All Time and All Categories."
-                    : "Peer comparison data is currently unavailable."}
-
-                </p>
-
-                <small>
-                  Eligible peers: {peerCount}
-                </small>
-
-              </div>
-
-            )}
-
-            <div className="ca-note">
-
-              <ShieldCheck size={16} />
-
-              Peer averages exclude your own data.
-              Comparisons use the same selected period
-              and category. Only recorded activities
-              are considered.
-
-            </div>
-
-          </section>
-
-          {/* =====================================
-              COMMUNITY ACTIVITY FEED
-          ====================================== */}
-
-          <section className="ca-panel">
-
-            <div className="ca-panel-header">
-
-              <div>
-
-                <span className="ca-eyebrow">
-                  COMMUNITY IN ACTION
-                </span>
-
-                <h3>
-
-                  <Activity size={22} />
-
-                  Community Activity Feed
-
-                </h3>
-
-                <p>
-                  Discover recent activities recorded by
-                  other CarbonDown community members.
-                </p>
-
-              </div>
-
-              <span className="ca-privacy">
-
-                <Activity size={15} />
-
-                {posts.length}{" "}
-                {posts.length === 1
-                  ? "activity"
-                  : "activities"}
-
-              </span>
-
-            </div>
-
-            <div className="ca-feed">
-
-              {posts.length > 0 ? (
-
-                posts.map((post, index) => {
-
-                  const postCategory = String(
-                    post.category || ""
-                  ).toLowerCase();
-
-                  const color =
-                    colors[postCategory] || "#4dd4a0";
-
-                  const userName = displayName(post);
-
-                  const activityName =
-                    post.activityName ||
-                    title(post.activityType) ||
-                    "Activity";
-
-                  const quantity =
-                    post.quantity !== null &&
-                    post.quantity !== undefined
-                      ? `${post.quantity} ${post.unit || ""}`.trim()
-                      : "";
-
-                  const emission =
-                    post.emission ??
-                    post.totalEmission ??
-                    0;
-
-                  const activityDate =
-                    post.logDate ||
-                    post.date ||
-                    "";
-
-                  return (
-
-                    <article
-                      key={
-                        post.id ??
-                        post.activityId ??
-                        `${post.userId}-${index}`
-                      }
-                      className="ca-post"
-                    >
-
-                      {/* POST USER */}
-
-                      <div className="ca-post-header">
-
-                        <div className="ca-avatar">
-
-                          {initials(userName)}
-
-                        </div>
-
-                        <div className="ca-post-user">
-
-                          <strong>
-                            {userName}
-                          </strong>
-
-                          <span>
-
-                            <CalendarDays size={12} />
-
-                            {activityDate}
-
-                          </span>
-
-                        </div>
-
-                        <span
-                          className="ca-post-category"
-                          style={{
-                            color,
-                            background: `${color}18`
-                          }}
-                        >
-
-                          {title(postCategory)}
-
-                        </span>
-
-                      </div>
-
-                      {/* POST ACTIVITY DETAILS */}
-
-                      <div className="ca-post-content">
-
-                        <div
-                          className="ca-post-icon"
-                          style={{
-                            background: `${color}20`,
-                            color
-                          }}
-                        >
-
-                          <Leaf size={23} />
-
-                        </div>
-
-                        <div>
-
-                          <span>
-                            Logged an activity
-                          </span>
-
-                          <h4>
-                            {activityName}
-                          </h4>
-
-                          {quantity && (
-
-                            <p>
-                              Quantity: {quantity}
-                            </p>
-
-                          )}
-
-                          <p>
-
-                            {post.description ||
-                              post.message ||
-                              "Contributing to a more carbon-aware community."}
-
-                          </p>
-
-                        </div>
-
-                      </div>
-
-                      {/* POST EMISSION */}
-
-                      <div className="ca-post-footer">
-
-                        <span>
-                          Recorded carbon impact
-                        </span>
-
-                        <strong>
-
-                          {fmt(emission)} kg CO₂e
-
-                        </strong>
-
-                      </div>
-
-                    </article>
-
-                  );
-
-                })
+                </>
 
               ) : (
 
                 <div className="ca-state">
 
-                  <Activity size={27} />
+                  <Trophy size={27} />
+
+                  <strong>No eligible users</strong>
+
+                  <p>
+                    No activities match the selected
+                    period and category. Try selecting
+                    All Time and All Categories.
+                  </p>
+
+                </div>
+
+              )}
+
+              <div className="ca-note">
+
+                <ShieldCheck size={16} />
+
+                Rankings reflect recorded activities only.
+                Lower recorded emissions do not necessarily
+                mean a lower complete carbon footprint.
+
+              </div>
+
+            </section>
+
+          )}
+
+          {/* =====================================
+              PEER BENCHMARKING - ANALYTICS ONLY
+          ====================================== */}
+
+          {showBenchmark && (
+
+            <section className="ca-panel">
+
+              <div className="ca-panel-header">
+
+                <div>
+
+                  <span className="ca-eyebrow">
+                    COMMUNITY COMPARISON
+                  </span>
+
+                  <h3>
+                    <BarChart3 size={22} />
+                    Peer Benchmarking
+                  </h3>
+
+                  <p>
+                    Compare your footprint with the
+                    CarbonDown user community.
+                  </p>
+
+                </div>
+
+                <span className="ca-privacy">
+
+                  <Users size={15} />
+
+                  {peerCount} eligible{" "}
+                  {peerCount === 1 ? "peer" : "peers"}
+
+                </span>
+
+              </div>
+
+              {canCompare ? (
+
+                <>
+
+                  <div className="ca-benchmark-hero">
+
+                    <div>
+
+                      <span>
+                        YOUR RECORDED FOOTPRINT
+                      </span>
+
+                      <h4>
+                        {fmt(myEmission)}
+                        <small> kg CO₂e</small>
+                      </h4>
+
+                      {difference !== null ? (
+
+                        <div
+                          className={
+                            `ca-performance ${
+                              difference <= 0
+                                ? "ca-positive"
+                                : "ca-negative"
+                            }`
+                          }
+                        >
+
+                          {difference <= 0 ? (
+                            <ArrowDownRight size={19} />
+                          ) : (
+                            <ArrowUpRight size={19} />
+                          )}
+
+                          {difference === 0
+                            ? "Equal to peer average"
+                            : `${Math.abs(difference).toFixed(1)}% ${
+                                difference < 0
+                                  ? "below"
+                                  : "above"
+                              } peer average`}
+
+                        </div>
+
+                      ) : comparisonStatus === "equal" ? (
+
+                        <div className="ca-performance ca-positive">
+                          <Leaf size={19} />
+                          Equal to peer average
+                        </div>
+
+                      ) : (
+
+                        <div className="ca-performance ca-negative">
+                          <ArrowUpRight size={19} />
+
+                          {fmt(myEmission - peerAverage)} kg
+                          above peer average
+                        </div>
+
+                      )}
+
+                    </div>
+
+                    <div className="ca-percentile">
+
+                      <strong>
+                        {percentile !== null
+                          ? `${fmt(percentile)}%`
+                          : "—"}
+                      </strong>
+
+                      <span>Relative standing</span>
+
+                      <small>
+                        Percentage of eligible peers
+                        with higher emissions
+                      </small>
+
+                    </div>
+
+                  </div>
+
+                  {/* EMISSION COMPARISON BARS */}
+
+                  <div className="ca-comparison">
+
+                    <div className="ca-bar-label">
+
+                      <span>Your emissions</span>
+
+                      <strong>
+                        {fmt(myEmission)} kg
+                      </strong>
+
+                    </div>
+
+                    <div className="ca-bar-track">
+
+                      <div
+                        className="ca-bar-you"
+                        style={{
+                          width:
+                            `${myEmission / comparisonMax * 100}%`
+                        }}
+                      />
+
+                    </div>
+
+                    <div className="ca-bar-label">
+
+                      <span>Community average</span>
+
+                      <strong>
+                        {fmt(peerAverage)} kg
+                      </strong>
+
+                    </div>
+
+                    <div className="ca-bar-track">
+
+                      <div
+                        className="ca-bar-peer"
+                        style={{
+                          width:
+                            `${peerAverage / comparisonMax * 100}%`
+                        }}
+                      />
+
+                    </div>
+
+                  </div>
+
+                  <div className="ca-benchmark-legend">
+
+                    <span>
+                      <i className="ca-dot-you" />
+                      Your emissions
+                    </span>
+
+                    <span>
+                      <i className="ca-dot-peer" />
+                      Peer average
+                    </span>
+
+                  </div>
+
+                  {/* CATEGORY-WISE BENCHMARKING */}
+
+                  <h4 className="ca-category-heading">
+                    Category-wise comparison
+                  </h4>
+
+                  <div className="ca-category-grid">
+
+                    {categories
+                      .filter(item =>
+                        category === "all" ||
+                        category === item
+                      )
+                      .map(item => {
+
+                        const info =
+                          benchmark?.categories?.[item];
+
+                        const mine = Number(
+                          info?.myEmission || 0
+                        );
+
+                        const peer =
+                          validNumber(info?.peerAverage)
+                            ? Number(info.peerAverage)
+                            : null;
+
+                        const max = Math.max(
+                          mine,
+                          peer || 0,
+                          1
+                        );
+
+                        return (
+
+                          <article
+                            key={item}
+                            className="ca-category-card"
+                          >
+
+                            <div className="ca-category-name">
+
+                              <span
+                                style={{
+                                  background: colors[item]
+                                }}
+                              />
+
+                              <strong>
+                                {title(item)}
+                              </strong>
+
+                            </div>
+
+                            <div className="ca-bar-label">
+
+                              <span>You</span>
+
+                              <strong>
+                                {fmt(mine)} kg
+                              </strong>
+
+                            </div>
+
+                            <div className="ca-bar-track">
+
+                              <div
+                                className="ca-bar-you"
+                                style={{
+                                  width:
+                                    `${mine / max * 100}%`
+                                }}
+                              />
+
+                            </div>
+
+                            <div className="ca-bar-label">
+
+                              <span>Peer average</span>
+
+                              <strong>
+                                {peer !== null
+                                  ? `${fmt(peer)} kg`
+                                  : "Unavailable"}
+                              </strong>
+
+                            </div>
+
+                            <div className="ca-bar-track">
+
+                              <div
+                                className="ca-bar-peer"
+                                style={{
+                                  width:
+                                    `${(peer || 0) / max * 100}%`
+                                }}
+                              />
+
+                            </div>
+
+                            <small
+                              className={
+                                peer === null
+                                  ? "ca-neutral-text"
+                                  : mine <= peer
+                                  ? "ca-positive-text"
+                                  : "ca-negative-text"
+                              }
+                            >
+
+                              {peer === null
+                                ? "Insufficient peer data"
+                                : mine === peer
+                                ? "Equal to peer average"
+                                : mine < peer
+                                ? `${fmt(peer - mine)} kg below average`
+                                : `${fmt(mine - peer)} kg above average`}
+
+                            </small>
+
+                          </article>
+                        );
+                      })}
+
+                  </div>
+
+                </>
+
+              ) : (
+
+                <div className="ca-state">
+
+                  <BarChart3 size={28} />
 
                   <strong>
-                    No community activities found
+                    Not enough comparison data
                   </strong>
 
                   <p>
-                    Other users' recorded activities
-                    matching your selected period
-                    and category will appear here.
+
+                    {!currentUser
+                      ? "Log an activity within the selected period and category to compare your emissions."
+                      : peerCount === 0
+                      ? "No other users have recorded matching activities. Try All Time and All Categories."
+                      : "Peer comparison data is currently unavailable."}
+
                   </p>
 
                   <small>
-                    Try selecting All Time and
-                    All Categories.
+                    Eligible peers: {peerCount}
                   </small>
 
                 </div>
 
               )}
 
-            </div>
+              <div className="ca-note">
 
-          </section>
+                <ShieldCheck size={16} />
+
+                Peer averages exclude your own data.
+                Comparisons use the same selected period
+                and category. Only recorded activities
+                are considered.
+
+              </div>
+
+            </section>
+
+          )}
+
+          {/* =====================================
+              COMMUNITY ACTIVITY FEED - ANALYTICS
+          ====================================== */}
+
+          {showBenchmark && (
+
+            <section className="ca-panel">
+
+              <div className="ca-panel-header">
+
+                <div>
+
+                  <span className="ca-eyebrow">
+                    COMMUNITY IN ACTION
+                  </span>
+
+                  <h3>
+                    <Activity size={22} />
+                    Community Activity Feed
+                  </h3>
+
+                  <p>
+                    Discover recent activities recorded by
+                    other CarbonDown community members.
+                  </p>
+
+                </div>
+
+                <span className="ca-privacy">
+
+                  <Activity size={15} />
+
+                  {posts.length}{" "}
+                  {posts.length === 1
+                    ? "activity"
+                    : "activities"}
+
+                </span>
+
+              </div>
+
+              <div className="ca-feed">
+
+                {posts.length > 0 ? (
+
+                  posts.map((post, index) => {
+
+                    const postCategory = String(
+                      post.category || ""
+                    ).toLowerCase();
+
+                    const color =
+                      colors[postCategory] || "#4dd4a0";
+
+                    const userName = displayName(post);
+
+                    const activityName =
+                      post.activityName ||
+                      title(post.activityType) ||
+                      "Activity";
+
+                    const quantity =
+                      post.quantity !== null &&
+                      post.quantity !== undefined
+                        ? `${post.quantity} ${post.unit || ""}`.trim()
+                        : "";
+
+                    const emission =
+                      post.emission ??
+                      post.totalEmission ??
+                      0;
+
+                    const activityDate =
+                      post.logDate ||
+                      post.date ||
+                      "";
+
+                    return (
+
+                      <article
+                        key={
+                          post.id ??
+                          post.activityId ??
+                          `${post.userId}-${index}`
+                        }
+                        className="ca-post"
+                      >
+
+                        <div className="ca-post-header">
+
+                          <div className="ca-avatar">
+                            {initials(userName)}
+                          </div>
+
+                          <div className="ca-post-user">
+
+                            <strong>{userName}</strong>
+
+                            <span>
+                              <CalendarDays size={12} />
+                              {activityDate}
+                            </span>
+
+                          </div>
+
+                          <span
+                            className="ca-post-category"
+                            style={{
+                              color,
+                              background: `${color}18`
+                            }}
+                          >
+                            {title(postCategory)}
+                          </span>
+
+                        </div>
+
+                        <div className="ca-post-content">
+
+                          <div
+                            className="ca-post-icon"
+                            style={{
+                              background: `${color}20`,
+                              color
+                            }}
+                          >
+                            <Leaf size={23} />
+                          </div>
+
+                          <div>
+
+                            <span>
+                              Logged an activity
+                            </span>
+
+                            <h4>{activityName}</h4>
+
+                            {quantity && (
+                              <p>Quantity: {quantity}</p>
+                            )}
+
+                            <p>
+                              {post.description ||
+                                post.message ||
+                                "Contributing to a more carbon-aware community."}
+                            </p>
+
+                          </div>
+
+                        </div>
+
+                        <div className="ca-post-footer">
+
+                          <span>
+                            Recorded carbon impact
+                          </span>
+
+                          <strong>
+                            {fmt(emission)} kg CO₂e
+                          </strong>
+
+                        </div>
+
+                      </article>
+                    );
+                  })
+
+                ) : (
+
+                  <div className="ca-state">
+
+                    <Activity size={27} />
+
+                    <strong>
+                      No community activities found
+                    </strong>
+
+                    <p>
+                      Other users' recorded activities
+                      matching your selected period
+                      and category will appear here.
+                    </p>
+
+                    <small>
+                      Try selecting All Time and
+                      All Categories.
+                    </small>
+
+                  </div>
+
+                )}
+
+              </div>
+
+            </section>
+
+          )}
 
         </>
 
       )}
 
     </section>
-
   );
 }
